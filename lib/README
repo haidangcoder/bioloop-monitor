@@ -1,0 +1,14 @@
+BioLoop Monitor - InnoFarm MVP
+
+Library Dependencies (auto-installed via platformio.ini):
+- OneWire: DS18B20 communication
+- DallasTemperature: Temperature sensor library
+- eFLL: Embedded Fuzzy Logic Library (AI core)
+- Blynk: Mobile dashboard integration
+
+Project Structure:
+- src/main.cpp: Main orchestrator
+- src/sensors/: Temperature and moisture reading
+- src/control/: Fuzzy logic controller (AI)
+- src/actuators/: Fan PWM and pump relay
+- include/config.h: All configuration parameters

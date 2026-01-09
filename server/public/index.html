@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLoop Monitor - Scientific Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .status-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        .status-card .unit {
+            font-size: 16px;
+            color: #999;
+        }
+        .status-card .state-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 5px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.05);
+            display: inline-block;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chart-container h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        .table-container h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f9f9f9;
+            font-weight: bold;
+            color: #666;
+            font-size: 14px;
+        }
+        td {
+            font-size: 13px;
+            color: #333;
+        }
+        .pump-on {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .pump-off {
+            color: #999;
+        }
+        .last-update {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 BioLoop Monitor</h1>
+        <p class="subtitle">Scientific Composting Control System - Real-time Dashboard</p>
+
+        <!-- Current Status -->
+        <div class="status-grid">
+            <div class="status-card">
+                <h3>Temperature</h3>
+                <div>
+                    <span class="value" id="current-temp">--</span>
+                    <span class="unit">°C</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <h3>Moisture</h3>
+                <div>
+                    <span class="value" id="current-moisture">--</span>
+                    <span class="unit">%</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <h3>Fan Speed</h3>
+                <div>
+                    <span class="value" id="current-fan">--</span>
+                    <span class="unit">PWM</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <h3>Pump Status</h3>
+                <div>
+                    <span class="value" id="current-pump">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Temperature Chart -->
+        <div class="chart-container">
+            <h2>Temperature Over Time</h2>
+            <div class="chart-wrapper">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Fan PWM Chart -->
+        <div class="chart-container">
+            <h2>Fan PWM Over Time</h2>
+            <div class="chart-wrapper">
+                <canvas id="fanChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Log Table -->
+        <div class="table-container">
+            <h2>Recent Data Log (Last 20 Entries)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Temp (°C)</th>
+                        <th>Moisture (%)</th>
+                        <th>Temp Error</th>
+                        <th>Fan PWM</th>
+                        <th>Pump</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table">
+                    <tr><td colspan="6" style="text-align: center; color: #999;">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="last-update">Last updated: <span id="last-update">--</span></p>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
