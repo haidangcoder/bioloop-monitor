@@ -19,8 +19,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static frontend files (dashboard)
+app.use(express.static('public'));
 
 // API routes
 app.use('/api/data', dataRoutes);
