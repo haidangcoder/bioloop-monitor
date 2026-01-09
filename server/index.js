@@ -1,7 +1,6 @@
 // BioLoop Monitor - Scientific MVP Backend
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 
 const dataRoutes = require('./routes/data');
 
