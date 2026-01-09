@@ -8,9 +8,6 @@ const dataRoutes = require('./routes/data');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
 // Middleware (MUST be before routes)
 app.use(cors());
 app.use(express.json());
@@ -33,9 +30,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`[Server] BioLoop Monitor running at http://localhost:${PORT}`);
+// Start server (bind to 0.0.0.0 for Render compatibility)
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Server] BioLoop Monitor running on port ${PORT}`);
   console.log('[Server] Middleware: express.json() + express.urlencoded() enabled');
   console.log('[Server] API endpoints:');
   console.log('  POST /api/data        - Submit sensor data');

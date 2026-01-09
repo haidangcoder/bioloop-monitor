@@ -29,57 +29,66 @@ router.post('/', (req, res) => {
     });
   }
   
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO sensor_data (temperature, moisture, temp_error, fan_pwm, pump_active)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(temperature, moisture, temp_error, fan_pwm, pump ? 1 : 0);
+  // Insert into database (sqlite3 async API)
+  const sql = `
+    INSERT INTO sensor_data (temperature, moisture, temp_error, fan_pwm, pump_active)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  
+  db.run(sql, [temperature, moisture, temp_error, fan_pwm, pump ? 1 : 0], function(err) {
+    if (err) {
+      console.error('[POST /api/data] Database error:', err.message);
+      return res.status(500).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
     
     res.json({ 
       success: true, 
-      id: result.lastInsertRowid,
+      id: this.lastID,
       timestamp: new Date().toISOString()
     });
-  } catch (err) {
-    res.status(500).json({ 
-      success: false, 
-      error: err.message 
-    });
-  }
+  });
 });
 
 // GET /api/latest - Get most recent compost log entry
 router.get('/latest', (req, res) => {
-  try {
-    const row = db.prepare(`
-      SELECT * FROM sensor_data 
-      ORDER BY timestamp DESC 
-      LIMIT 1
-    `).get();
+  const sql = `
+    SELECT * FROM sensor_data 
+    ORDER BY timestamp DESC 
+    LIMIT 1
+  `;
+  
+  db.get(sql, [], (err, row) => {
+    if (err) {
+      console.error('[GET /api/latest] Database error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
     
     res.json(row || {});
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 // GET /api/history?limit=200 - Get last N entries (default 200)
 router.get('/history', (req, res) => {
   const limit = parseInt(req.query.limit) || 200;
   
-  try {
-    const rows = db.prepare(`
-      SELECT * FROM sensor_data 
-      ORDER BY timestamp DESC 
-      LIMIT ?
-    `).all(limit);
+  const sql = `
+    SELECT * FROM sensor_data 
+    ORDER BY timestamp DESC 
+    LIMIT ?
+  `;
+  
+  db.all(sql, [limit], (err, rows) => {
+    if (err) {
+      console.error('[GET /api/history] Database error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
     
     // Return in ascending order (oldest to newest)
     res.json(rows.reverse());
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 module.exports = router;
