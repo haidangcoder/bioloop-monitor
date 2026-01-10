@@ -1,5 +1,16 @@
+# Node
 node_modules/
 server/node_modules/
+
+# Database
 *.db
+
+# PlatformIO
 .pio/
+
+# Editor
 .vscode/
+
+# OS
+.DS_Store
+Thumbs.db
