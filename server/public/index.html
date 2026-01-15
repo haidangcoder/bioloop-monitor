@@ -302,6 +302,154 @@
             color: #94a3b8;
             text-transform: uppercase;
         }
+        
+        /* Tooltip styles */
+        .info-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 11px;
+            cursor: help;
+            margin-left: 5px;
+            color: #94a3b8;
+        }
+        .info-icon:hover {
+            background: rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 280px;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+            line-height: 1.5;
+            border: 1px solid #4ade80;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #4ade80 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-title {
+            font-weight: bold;
+            color: #4ade80;
+            margin-bottom: 5px;
+        }
+        
+        /* Help panel */
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+            font-size: 24px;
+            color: white;
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+        .help-button:hover {
+            transform: scale(1.1);
+        }
+        .help-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+            border-radius: 12px;
+            border: 2px solid #4ade80;
+            padding: 25px;
+            z-index: 2000;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .help-panel.active {
+            display: block;
+        }
+        .help-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1999;
+        }
+        .help-overlay.active {
+            display: block;
+        }
+        .help-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+        .help-close:hover {
+            color: #4ade80;
+        }
+        .help-section {
+            margin-bottom: 20px;
+        }
+        .help-section h3 {
+            color: #4ade80;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .help-section p {
+            color: #cbd5e1;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        .help-section ul {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-left: 20px;
+        }
     </style>
 </head>
 <body>
@@ -311,21 +459,37 @@
 
         <!-- Business Metrics Bar -->
         <div class="metrics-bar">
-            <div class="metric-item">
+            <div class="metric-item tooltip">
                 <div class="metric-value">95%</div>
-                <div class="metric-label">Tỷ lệ thành công</div>
+                <div class="metric-label">Tỷ lệ thành công <span class="info-icon">?</span></div>
+                <span class="tooltiptext">
+                    <div class="tooltip-title">Tỷ lệ thành công 95%</div>
+                    Hệ thống duy trì điều kiện tối ưu (nhiệt độ 45-55°C, độ ẩm 50-60%) trong 95% thời gian hoạt động, đảm bảo chất lượng compost cao.
+                </span>
             </div>
-            <div class="metric-item">
+            <div class="metric-item tooltip">
                 <div class="metric-value">60%</div>
-                <div class="metric-label">Tiết kiệm thời gian</div>
+                <div class="metric-label">Tiết kiệm thời gian <span class="info-icon">?</span></div>
+                <span class="tooltiptext">
+                    <div class="tooltip-title">Tiết kiệm 60% thời gian</div>
+                    Tự động giám sát và điều khiển 24/7, giảm 60% thời gian kiểm tra thủ công so với phương pháp truyền thống.
+                </span>
             </div>
-            <div class="metric-item">
+            <div class="metric-item tooltip">
                 <div class="metric-value">70%</div>
-                <div class="metric-label">Giảm chi phí nhân công</div>
+                <div class="metric-label">Giảm chi phí nhân công <span class="info-icon">?</span></div>
+                <span class="tooltiptext">
+                    <div class="tooltip-title">Giảm 70% chi phí nhân công</div>
+                    Không cần nhân viên giám sát liên tục, chỉ cần kiểm tra định kỳ qua dashboard online.
+                </span>
             </div>
-            <div class="metric-item">
+            <div class="metric-item tooltip">
                 <div class="metric-value">3 tháng</div>
-                <div class="metric-label">ROI hoàn vốn</div>
+                <div class="metric-label">ROI hoàn vốn <span class="info-icon">?</span></div>
+                <span class="tooltiptext">
+                    <div class="tooltip-title">Hoàn vốn sau 3 tháng</div>
+                    Chi phí đầu tư ban đầu được hoàn vốn sau 3 tháng nhờ tiết kiệm nhân công và tăng năng suất.
+                </span>
             </div>
         </div>
 
@@ -335,7 +499,17 @@
             <div>
                 <!-- Biological Phase Indicator -->
                 <div class="phase-indicator">
-                    <h2>🔬 Giai Đoạn Sinh Học</h2>
+                    <h2>🔬 Giai Đoạn Sinh Học 
+                        <span class="tooltip">
+                            <span class="info-icon">?</span>
+                            <span class="tooltiptext">
+                                <div class="tooltip-title">Giai đoạn sinh học</div>
+                                <strong>Mesophilic (&lt;40°C):</strong> Vi sinh vật ưa ấm phân hủy chất hữu cơ ban đầu.<br><br>
+                                <strong>Thermophilic (45-65°C):</strong> Vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh và cỏ dại.<br><br>
+                                <strong>Maturation (&lt;40°C):</strong> Compost ổn định, trưởng thành, sẵn sàng sử dụng.
+                            </span>
+                        </span>
+                    </h2>
                     <div class="phase-name" id="phase-name">Đang tải...</div>
                     <div class="phase-description" id="phase-description">Đang phân tích dữ liệu...</div>
                     <div class="phase-bar">
@@ -352,7 +526,19 @@
                 
                 <!-- Compost Stability Index -->
                 <div class="stability-gauge">
-                    <h2>📊 Chỉ Số Ổn Định Compost</h2>
+                    <h2>📊 Chỉ Số Ổn Định Compost
+                        <span class="tooltip">
+                            <span class="info-icon">?</span>
+                            <span class="tooltiptext">
+                                <div class="tooltip-title">Chỉ số ổn định (0-100)</div>
+                                Đánh giá mức độ hệ thống duy trì điều kiện tối ưu trong 20 lần đo gần nhất.<br><br>
+                                <strong>80-100:</strong> Xuất sắc - Điều kiện lý tưởng<br>
+                                <strong>60-79:</strong> Tốt - Hoạt động hiệu quả<br>
+                                <strong>40-59:</strong> Trung bình - Cần theo dõi<br>
+                                <strong>&lt;40:</strong> Cảnh báo - Cần điều chỉnh
+                            </span>
+                        </span>
+                    </h2>
                     <div class="gauge-container">
                         <div class="gauge-bg"></div>
                         <div class="gauge-mask"></div>
@@ -366,32 +552,48 @@
             
             <!-- Right: Current Status Cards -->
             <div class="status-grid">
-                <div class="status-card">
+                <div class="status-card tooltip">
                     <h3>🌡️ Nhiệt Độ</h3>
                     <div>
                         <span class="value" id="current-temp">--</span>
                         <span class="unit">°C</span>
                     </div>
+                    <span class="tooltiptext">
+                        <div class="tooltip-title">Nhiệt độ compost</div>
+                        Nhiệt độ hiện tại của đống compost. Mục tiêu: 50°C (vùng tối ưu 45-55°C) để vi sinh vật hoạt động hiệu quả nhất.
+                    </span>
                 </div>
-                <div class="status-card">
+                <div class="status-card tooltip">
                     <h3>💧 Độ Ẩm</h3>
                     <div>
                         <span class="value" id="current-moisture">--</span>
                         <span class="unit">%</span>
                     </div>
+                    <span class="tooltiptext">
+                        <div class="tooltip-title">Độ ẩm đất</div>
+                        Độ ẩm của compost. Mục tiêu: 55% (vùng tối ưu 50-60%). Quá khô: vi sinh vật chết, quá ẩm: thiếu oxy.
+                    </span>
                 </div>
-                <div class="status-card">
+                <div class="status-card tooltip">
                     <h3>🌀 Tốc Độ Quạt</h3>
                     <div>
                         <span class="value" id="current-fan">--</span>
                         <span class="unit">PWM</span>
                     </div>
+                    <span class="tooltiptext">
+                        <div class="tooltip-title">Điều khiển quạt (PWM 0-255)</div>
+                        Tốc độ quạt thông gió do Fuzzy Logic điều khiển tự động. Quạt cung cấp oxy cho vi sinh vật và làm mát khi nhiệt độ cao.
+                    </span>
                 </div>
-                <div class="status-card">
+                <div class="status-card tooltip">
                     <h3>💦 Máy Bơm</h3>
                     <div>
                         <span class="value" id="current-pump">--</span>
                     </div>
+                    <span class="tooltiptext">
+                        <div class="tooltip-title">Trạng thái máy bơm</div>
+                        Máy bơm tự động bật khi độ ẩm &lt; 45% để duy trì độ ẩm tối ưu cho quá trình phân hủy.
+                    </span>
                 </div>
             </div>
         </div>
@@ -463,6 +665,108 @@
         <p class="last-update">Cập nhật lần cuối: <span id="last-update">--</span></p>
     </div>
 
+    <!-- Help Button -->
+    <div class="help-button" onclick="toggleHelp()">?</div>
+    
+    <!-- Help Overlay -->
+    <div class="help-overlay" id="help-overlay" onclick="toggleHelp()"></div>
+    
+    <!-- Help Panel -->
+    <div class="help-panel" id="help-panel">
+        <span class="help-close" onclick="toggleHelp()">&times;</span>
+        <h1 style="color: #4ade80; margin-bottom: 20px;">📖 Hướng Dẫn Sử Dụng Dashboard</h1>
+        
+        <div class="help-section">
+            <h3>🎯 Tổng Quan Hệ Thống</h3>
+            <p>BioLoop Monitor là hệ thống giám sát và điều khiển tự động quá trình ủ phân compost sử dụng IoT và Fuzzy Logic. Hệ thống tự động duy trì điều kiện tối ưu để vi sinh vật hoạt động hiệu quả.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>📊 Các Chỉ Số Quan Trọng</h3>
+            <p><strong>1. Nhiệt độ (°C):</strong></p>
+            <ul>
+                <li>Mục tiêu: 50°C (vùng tối ưu: 45-55°C)</li>
+                <li>Nhiệt độ cao giúp tiêu diệt mầm bệnh và cỏ dại</li>
+                <li>Quá cao (&gt;65°C): vi sinh vật chết, hệ thống tự động làm mát</li>
+            </ul>
+            
+            <p><strong>2. Độ ẩm (%):</strong></p>
+            <ul>
+                <li>Mục tiêu: 55% (vùng tối ưu: 50-60%)</li>
+                <li>Quá khô (&lt;45%): máy bơm tự động bật</li>
+                <li>Quá ẩm (&gt;65%): quạt tăng tốc để làm khô</li>
+            </ul>
+            
+            <p><strong>3. Tốc độ quạt (PWM 0-255):</strong></p>
+            <ul>
+                <li>Fuzzy Logic tự động điều chỉnh dựa trên nhiệt độ</li>
+                <li>Cung cấp oxy cho vi sinh vật hiếu khí</li>
+                <li>Làm mát khi nhiệt độ quá cao</li>
+            </ul>
+            
+            <p><strong>4. Máy bơm (BẬT/TẮT):</strong></p>
+            <ul>
+                <li>Tự động bật khi độ ẩm &lt; 45%</li>
+                <li>Tự động tắt khi độ ẩm &gt; 60%</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>🔬 Giai Đoạn Sinh Học</h3>
+            <p><strong>Mesophilic (20-40°C):</strong> Giai đoạn khởi đầu, vi sinh vật ưa ấm phân hủy chất hữu cơ dễ phân hủy.</p>
+            <p><strong>Thermophilic (45-65°C):</strong> Giai đoạn chính, vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh.</p>
+            <p><strong>Maturation (&lt;20°C):</strong> Giai đoạn ổn định, compost trưởng thành, sẵn sàng sử dụng.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>📈 Chỉ Số Ổn Định (0-100)</h3>
+            <p>Đánh giá mức độ hệ thống duy trì điều kiện tối ưu:</p>
+            <ul>
+                <li><strong>80-100:</strong> Xuất sắc - Điều kiện lý tưởng</li>
+                <li><strong>60-79:</strong> Tốt - Hoạt động hiệu quả</li>
+                <li><strong>40-59:</strong> Trung bình - Cần theo dõi</li>
+                <li><strong>&lt;40:</strong> Cảnh báo - Cần kiểm tra hệ thống</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>💡 Lợi Ích Kinh Tế</h3>
+            <ul>
+                <li><strong>95% tỷ lệ thành công:</strong> Chất lượng compost ổn định</li>
+                <li><strong>60% tiết kiệm thời gian:</strong> Tự động 24/7</li>
+                <li><strong>70% giảm chi phí nhân công:</strong> Không cần giám sát liên tục</li>
+                <li><strong>3 tháng hoàn vốn:</strong> ROI nhanh</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>🎨 Cách Đọc Biểu Đồ</h3>
+            <p><strong>Vùng xanh lá:</strong> Khoảng giá trị tối ưu (45-55°C cho nhiệt độ, 50-60% cho độ ẩm)</p>
+            <p><strong>Đường nét đứt:</strong> Giá trị mục tiêu lý tưởng (50°C, 55%)</p>
+            <p>Hệ thống tự động điều chỉnh để duy trì các giá trị trong vùng xanh.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>❓ Câu Hỏi Thường Gặp</h3>
+            <p><strong>Q: Tại sao nhiệt độ giảm đột ngột?</strong><br>
+            A: Quạt đang làm mát vì nhiệt độ quá cao. Đây là hoạt động bình thường.</p>
+            
+            <p><strong>Q: Máy bơm bật liên tục?</strong><br>
+            A: Kiểm tra cảm biến độ ẩm hoặc nguồn nước. Có thể độ ẩm thực tế quá thấp.</p>
+            
+            <p><strong>Q: Dashboard không cập nhật?</strong><br>
+            A: Kiểm tra kết nối WiFi của ESP32 và server.</p>
+        </div>
+    </div>
+
+    <script>
+        function toggleHelp() {
+            const panel = document.getElementById('help-panel');
+            const overlay = document.getElementById('help-overlay');
+            panel.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+    </script>
     <script src="dashboard.js"></script>
 </body>
 </html>
