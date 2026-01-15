@@ -500,7 +500,6 @@
             border: 2px solid #8b5cf6;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             z-index: 1001;
-            display: flex;
             flex-direction: column;
         }
         .chatbot-window.active {
@@ -528,6 +527,19 @@
             font-size: 24px;
             color: white;
             line-height: 1;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .chatbot-close:hover {
+            background: rgba(255,255,255,0.1);
         }
         .chatbot-messages {
             flex: 1;
@@ -895,7 +907,7 @@
                 <h3>🤖 BioLoop AI Assistant</h3>
                 <div class="chatbot-status">● Online - Sẵn sàng hỗ trợ</div>
             </div>
-            <span class="chatbot-close" onclick="toggleChatbot()">&times;</span>
+            <button class="chatbot-close" onclick="toggleChatbot()" type="button">&times;</button>
         </div>
         
         <div class="chatbot-messages" id="chat-messages">
