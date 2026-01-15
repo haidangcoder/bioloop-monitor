@@ -344,6 +344,7 @@
             line-height: 1.5;
             border: 1px solid #4ade80;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
         }
         .tooltip .tooltiptext::after {
             content: "";
@@ -358,6 +359,18 @@
         .tooltip:hover .tooltiptext {
             visibility: visible;
             opacity: 1;
+        }
+        
+        /* Tooltip for status cards - adjust position */
+        .status-card .tooltip .tooltiptext {
+            bottom: auto;
+            top: 100%;
+            margin-top: 10px;
+        }
+        .status-card .tooltip .tooltiptext::after {
+            top: auto;
+            bottom: 100%;
+            border-color: transparent transparent #4ade80 transparent;
         }
         .tooltip-title {
             font-weight: bold;
@@ -778,48 +791,64 @@
             
             <!-- Right: Current Status Cards -->
             <div class="status-grid">
-                <div class="status-card tooltip">
-                    <h3>🌡️ Nhiệt Độ</h3>
+                <div class="status-card">
+                    <h3>🌡️ Nhiệt Độ 
+                        <span class="tooltip">
+                            <span class="info-icon">?</span>
+                            <span class="tooltiptext">
+                                <div class="tooltip-title">Nhiệt độ compost</div>
+                                Nhiệt độ hiện tại của đống compost. Mục tiêu: 50°C (vùng tối ưu 45-55°C) để vi sinh vật hoạt động hiệu quả nhất.
+                            </span>
+                        </span>
+                    </h3>
                     <div>
                         <span class="value" id="current-temp">--</span>
                         <span class="unit">°C</span>
                     </div>
-                    <span class="tooltiptext">
-                        <div class="tooltip-title">Nhiệt độ compost</div>
-                        Nhiệt độ hiện tại của đống compost. Mục tiêu: 50°C (vùng tối ưu 45-55°C) để vi sinh vật hoạt động hiệu quả nhất.
-                    </span>
                 </div>
-                <div class="status-card tooltip">
-                    <h3>💧 Độ Ẩm</h3>
+                <div class="status-card">
+                    <h3>💧 Độ Ẩm 
+                        <span class="tooltip">
+                            <span class="info-icon">?</span>
+                            <span class="tooltiptext">
+                                <div class="tooltip-title">Độ ẩm đất</div>
+                                Độ ẩm của compost. Mục tiêu: 55% (vùng tối ưu 50-60%). Quá khô: vi sinh vật chết, quá ẩm: thiếu oxy.
+                            </span>
+                        </span>
+                    </h3>
                     <div>
                         <span class="value" id="current-moisture">--</span>
                         <span class="unit">%</span>
                     </div>
-                    <span class="tooltiptext">
-                        <div class="tooltip-title">Độ ẩm đất</div>
-                        Độ ẩm của compost. Mục tiêu: 55% (vùng tối ưu 50-60%). Quá khô: vi sinh vật chết, quá ẩm: thiếu oxy.
-                    </span>
                 </div>
-                <div class="status-card tooltip">
-                    <h3>🌀 Tốc Độ Quạt</h3>
+                <div class="status-card">
+                    <h3>🌀 Tốc Độ Quạt 
+                        <span class="tooltip">
+                            <span class="info-icon">?</span>
+                            <span class="tooltiptext">
+                                <div class="tooltip-title">Điều khiển quạt (PWM 0-255)</div>
+                                Tốc độ quạt thông gió do Fuzzy Logic điều khiển tự động. Quạt cung cấp oxy cho vi sinh vật và làm mát khi nhiệt độ cao.
+                            </span>
+                        </span>
+                    </h3>
                     <div>
                         <span class="value" id="current-fan">--</span>
                         <span class="unit">PWM</span>
                     </div>
-                    <span class="tooltiptext">
-                        <div class="tooltip-title">Điều khiển quạt (PWM 0-255)</div>
-                        Tốc độ quạt thông gió do Fuzzy Logic điều khiển tự động. Quạt cung cấp oxy cho vi sinh vật và làm mát khi nhiệt độ cao.
-                    </span>
                 </div>
-                <div class="status-card tooltip">
-                    <h3>💦 Máy Bơm</h3>
+                <div class="status-card">
+                    <h3>💦 Máy Bơm 
+                        <span class="tooltip">
+                            <span class="info-icon">?</span>
+                            <span class="tooltiptext">
+                                <div class="tooltip-title">Trạng thái máy bơm</div>
+                                Máy bơm tự động bật khi độ ẩm &lt; 45% để duy trì độ ẩm tối ưu cho quá trình phân hủy.
+                            </span>
+                        </span>
+                    </h3>
                     <div>
                         <span class="value" id="current-pump">--</span>
                     </div>
-                    <span class="tooltiptext">
-                        <div class="tooltip-title">Trạng thái máy bơm</div>
-                        Máy bơm tự động bật khi độ ẩm &lt; 45% để duy trì độ ẩm tối ưu cho quá trình phân hủy.
-                    </span>
                 </div>
             </div>
         </div>
