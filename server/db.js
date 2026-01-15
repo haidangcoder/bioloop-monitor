@@ -24,7 +24,7 @@ db.serialize(() => {
     )
   `, (err) => {
     if (err) {
-      console.error('[DB] Table creation error:', err.message);
+      console.error('[DB] Table error:', err.message);
     } else {
       console.log('[DB] Table ready');
     }

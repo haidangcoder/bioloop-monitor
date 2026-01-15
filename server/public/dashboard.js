@@ -1,54 +1,122 @@
-// BioLoop Monitor - Dashboard JavaScript
-// Data flow: API → fetch → update DOM & charts
+// BioLoop Monitor - Scientific Dashboard JavaScript
+// Features: Biological Phase Indicator, Optimal Range Overlay, Stability Index
 
-// Chart.js instances (initialized in HTML)
-let tempChart, fanChart;
+// Chart.js instances
+let tempChart, moistureChart, fanChart;
 
-// Fuzzy interpretation helper functions
-// Based on design document fuzzy set definitions
+// Stability tracking
+let stabilityHistory = [];
+const STABILITY_WINDOW = 20; // Track last 20 readings
 
-function getTempErrorState(tempError) {
-    // COLD: tempError < -2
-    // OPTIMAL: -5 to +5 (centered at 0)
-    // HOT: tempError > +2
-    if (tempError < -2) return { label: 'COLD', color: '#2196F3' };
-    if (tempError > 2) return { label: 'HOT', color: '#F44336' };
-    return { label: 'OPTIMAL', color: '#4CAF50' };
+// Biological Phase Detection based on temperature
+function getBiologicalPhase(temperature) {
+    if (temperature >= 45 && temperature <= 65) {
+        return {
+            name: 'THERMOPHILIC',
+            nameVi: 'Pha Nhiệt Cao',
+            description: 'Vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh và cỏ dại',
+            color: '#f97316',
+            segment: 'thermo'
+        };
+    } else if (temperature >= 20 && temperature < 45) {
+        return {
+            name: 'MESOPHILIC',
+            nameVi: 'Pha Ấm',
+            description: 'Vi sinh vật ưa ấm phân hủy chất hữu cơ, giai đoạn khởi đầu',
+            color: '#3b82f6',
+            segment: 'meso'
+        };
+    } else if (temperature < 20) {
+        return {
+            name: 'MATURATION',
+            nameVi: 'Pha Ổn Định',
+            description: 'Compost đang ổn định và trưởng thành, sẵn sàng sử dụng',
+            color: '#22c55e',
+            segment: 'mature'
+        };
+    } else {
+        return {
+            name: 'COOLING',
+            nameVi: 'Đang Làm Mát',
+            description: 'Nhiệt độ quá cao, hệ thống đang làm mát để bảo vệ vi sinh vật',
+            color: '#ef4444',
+            segment: 'thermo'
+        };
+    }
 }
 
-function getMoistureState(moisture) {
-    // DRY: 0-35%
-    // OPTIMAL: 30-70% (centered at 50)
-    // WET: 65-100%
-    if (moisture < 35) return { label: 'DRY', color: '#FF9800' };
-    if (moisture > 65) return { label: 'WET', color: '#2196F3' };
-    return { label: 'OPTIMAL', color: '#4CAF50' };
+// Calculate Compost Stability Index (0-100)
+function calculateStabilityIndex(historyData) {
+    if (!historyData || historyData.length === 0) return 0;
+    
+    let optimalCount = 0;
+    const recentData = historyData.slice(-STABILITY_WINDOW);
+    
+    recentData.forEach(d => {
+        const tempOptimal = d.temperature >= 45 && d.temperature <= 55;
+        const moistureOptimal = d.moisture >= 50 && d.moisture <= 60;
+        if (tempOptimal && moistureOptimal) optimalCount++;
+        else if (tempOptimal || moistureOptimal) optimalCount += 0.5;
+    });
+    
+    return Math.round((optimalCount / recentData.length) * 100);
 }
 
-function getFanLevel(fanPwm) {
-    // OFF: 0-40
-    // LOW: 30-130 (centered at 80)
-    // MEDIUM: 100-200 (centered at 150)
-    // HIGH: 180-255
-    if (fanPwm <= 40) return { label: 'OFF', color: '#9E9E9E' };
-    if (fanPwm <= 130) return { label: 'LOW', color: '#4CAF50' };
-    if (fanPwm <= 200) return { label: 'MEDIUM', color: '#FF9800' };
-    return { label: 'HIGH', color: '#F44336' };
+function getStabilityLabel(index) {
+    if (index >= 80) return { text: 'Xuất sắc - Điều kiện lý tưởng', color: '#10b981' };
+    if (index >= 60) return { text: 'Tốt - Hoạt động hiệu quả', color: '#22c55e' };
+    if (index >= 40) return { text: 'Trung bình - Cần theo dõi', color: '#eab308' };
+    if (index >= 20) return { text: 'Thấp - Cần điều chỉnh', color: '#f97316' };
+    return { text: 'Cảnh báo - Kiểm tra hệ thống', color: '#ef4444' };
 }
 
-// Initialize charts
+// Update Biological Phase UI
+function updatePhaseIndicator(temperature) {
+    const phase = getBiologicalPhase(temperature);
+    
+    document.getElementById('phase-name').textContent = phase.nameVi;
+    document.getElementById('phase-name').style.color = phase.color;
+    document.getElementById('phase-description').textContent = phase.description;
+    
+    // Update phase bar segments
+    ['meso', 'thermo', 'mature'].forEach(seg => {
+        const el = document.getElementById(`seg-${seg}`);
+        el.classList.toggle('inactive', seg !== phase.segment);
+    });
+}
+
+// Update Stability Gauge
+function updateStabilityGauge(historyData) {
+    const index = calculateStabilityIndex(historyData);
+    const label = getStabilityLabel(index);
+    
+    // Update needle rotation (-90deg = 0, 90deg = 100)
+    const rotation = -90 + (index * 1.8);
+    document.getElementById('gauge-needle').style.transform = 
+        `translateX(-50%) rotate(${rotation}deg)`;
+    
+    document.getElementById('stability-value').textContent = index;
+    document.getElementById('stability-value').style.color = label.color;
+    document.getElementById('stability-label').textContent = label.text;
+}
+
+
+// Initialize charts with optimal range overlays
 function initCharts() {
+    // Temperature Chart with Optimal Zone (45-55°C)
     tempChart = new Chart(document.getElementById('tempChart'), {
         type: 'line',
         data: {
             labels: [],
             datasets: [{
-                label: 'Temperature (°C)',
+                label: 'Nhiệt độ (°C)',
                 data: [],
-                borderColor: '#FF6384',
-                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                borderColor: '#f97316',
+                backgroundColor: 'rgba(249, 115, 22, 0.1)',
                 tension: 0.4,
-                fill: true
+                fill: false,
+                borderWidth: 2,
+                pointRadius: 2
             }]
         },
         options: {
@@ -56,19 +124,120 @@ function initCharts() {
             maintainAspectRatio: false,
             scales: {
                 y: {
-                    beginAtZero: false,
-                    title: { display: true, text: 'Temperature (°C)' }
+                    min: 20,
+                    max: 70,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#94a3b8' },
+                    title: { display: true, text: 'Nhiệt độ (°C)', color: '#94a3b8' }
                 },
                 x: {
-                    title: { display: true, text: 'Time' }
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#94a3b8', maxRotation: 0 },
+                    title: { display: true, text: 'Thời gian', color: '#94a3b8' }
                 }
             },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                annotation: {
+                    annotations: {
+                        optimalZone: {
+                            type: 'box',
+                            yMin: 45,
+                            yMax: 55,
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            borderColor: 'rgba(34, 197, 94, 0.5)',
+                            borderWidth: 1
+                        },
+                        optimalLine: {
+                            type: 'line',
+                            yMin: 50,
+                            yMax: 50,
+                            borderColor: 'rgba(34, 197, 94, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            label: {
+                                display: true,
+                                content: 'Mục tiêu: 50°C',
+                                position: 'end',
+                                backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                                color: '#fff',
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
             }
         }
     });
 
+    // Moisture Chart with Optimal Zone (50-60%)
+    moistureChart = new Chart(document.getElementById('moistureChart'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Độ ẩm (%)',
+                data: [],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: false,
+                borderWidth: 2,
+                pointRadius: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#94a3b8' },
+                    title: { display: true, text: 'Độ ẩm (%)', color: '#94a3b8' }
+                },
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#94a3b8', maxRotation: 0 },
+                    title: { display: true, text: 'Thời gian', color: '#94a3b8' }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                annotation: {
+                    annotations: {
+                        optimalZone: {
+                            type: 'box',
+                            yMin: 50,
+                            yMax: 60,
+                            backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                            borderColor: 'rgba(34, 197, 94, 0.5)',
+                            borderWidth: 1
+                        },
+                        optimalLine: {
+                            type: 'line',
+                            yMin: 55,
+                            yMax: 55,
+                            borderColor: 'rgba(34, 197, 94, 0.8)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            label: {
+                                display: true,
+                                content: 'Mục tiêu: 55%',
+                                position: 'end',
+                                backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                                color: '#fff',
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Fan PWM Chart
     fanChart = new Chart(document.getElementById('fanChart'), {
         type: 'line',
         data: {
@@ -76,10 +245,12 @@ function initCharts() {
             datasets: [{
                 label: 'Fan PWM',
                 data: [],
-                borderColor: '#36A2EB',
-                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
                 tension: 0.4,
-                fill: true
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 2
             }]
         },
         options: {
@@ -87,12 +258,16 @@ function initCharts() {
             maintainAspectRatio: false,
             scales: {
                 y: {
-                    beginAtZero: true,
+                    min: 0,
                     max: 255,
-                    title: { display: true, text: 'PWM Value (0-255)' }
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#94a3b8' },
+                    title: { display: true, text: 'PWM (0-255)', color: '#94a3b8' }
                 },
                 x: {
-                    title: { display: true, text: 'Time' }
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#94a3b8', maxRotation: 0 },
+                    title: { display: true, text: 'Thời gian', color: '#94a3b8' }
                 }
             },
             plugins: {
@@ -102,74 +277,40 @@ function initCharts() {
     });
 }
 
+
 // Fetch latest reading and update status cards
 async function fetchLatest() {
     try {
-        const response = await fetch('/api/latest');
+        const response = await fetch('/api/data/latest');
         const data = await response.json();
         
         if (data.id) {
-            // Update status cards with values
+            // Update status cards
             document.getElementById('current-temp').textContent = data.temperature.toFixed(1);
             document.getElementById('current-moisture').textContent = data.moisture.toFixed(1);
             document.getElementById('current-fan').textContent = data.fan_pwm;
             
-            // Add fuzzy state labels
-            const tempState = getTempErrorState(data.temp_error);
-            const moistureState = getMoistureState(data.moisture);
-            const fanState = getFanLevel(data.fan_pwm);
-            
-            // Update temperature label
-            let tempLabel = document.getElementById('temp-state');
-            if (!tempLabel) {
-                tempLabel = document.createElement('div');
-                tempLabel.id = 'temp-state';
-                tempLabel.className = 'state-label';
-                document.getElementById('current-temp').parentElement.appendChild(tempLabel);
-            }
-            tempLabel.textContent = tempState.label;
-            tempLabel.style.color = tempState.color;
-            
-            // Update moisture label
-            let moistureLabel = document.getElementById('moisture-state');
-            if (!moistureLabel) {
-                moistureLabel = document.createElement('div');
-                moistureLabel.id = 'moisture-state';
-                moistureLabel.className = 'state-label';
-                document.getElementById('current-moisture').parentElement.appendChild(moistureLabel);
-            }
-            moistureLabel.textContent = moistureState.label;
-            moistureLabel.style.color = moistureState.color;
-            
-            // Update fan label
-            let fanLabel = document.getElementById('fan-state');
-            if (!fanLabel) {
-                fanLabel = document.createElement('div');
-                fanLabel.id = 'fan-state';
-                fanLabel.className = 'state-label';
-                document.getElementById('current-fan').parentElement.appendChild(fanLabel);
-            }
-            fanLabel.textContent = fanState.label;
-            fanLabel.style.color = fanState.color;
-            
-            // Update pump status with color
+            // Update pump status
             const pumpElement = document.getElementById('current-pump');
-            pumpElement.textContent = data.pump_active ? 'ON' : 'OFF';
+            pumpElement.textContent = data.pump_active ? 'BẬT' : 'TẮT';
             pumpElement.className = data.pump_active ? 'value pump-on' : 'value pump-off';
             
-            // Update last update timestamp
-            document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleString();
+            // Update biological phase indicator
+            updatePhaseIndicator(data.temperature);
+            
+            // Update timestamp
+            document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleString('vi-VN');
         }
     } catch (error) {
         console.error('Error fetching latest data:', error);
-        document.getElementById('last-update').textContent = 'Error loading data';
+        document.getElementById('last-update').textContent = 'Lỗi kết nối';
     }
 }
 
 // Fetch history and update charts + table
 async function fetchHistory() {
     try {
-        const response = await fetch('/api/history?limit=100');
+        const response = await fetch('/api/data/history?limit=100');
         const data = await response.json();
         
         if (data.length === 0) {
@@ -177,25 +318,34 @@ async function fetchHistory() {
             return;
         }
         
+        // Update stability gauge with history
+        updateStabilityGauge(data);
+        
         // Prepare data for charts
         const labels = data.map(d => {
             const date = new Date(d.timestamp);
-            return date.toLocaleTimeString();
+            return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         });
         const temps = data.map(d => d.temperature);
+        const moistures = data.map(d => d.moisture);
         const fans = data.map(d => d.fan_pwm);
         
         // Update temperature chart
         tempChart.data.labels = labels;
         tempChart.data.datasets[0].data = temps;
-        tempChart.update('none'); // 'none' = no animation for smooth updates
+        tempChart.update('none');
+        
+        // Update moisture chart
+        moistureChart.data.labels = labels;
+        moistureChart.data.datasets[0].data = moistures;
+        moistureChart.update('none');
         
         // Update fan PWM chart
         fanChart.data.labels = labels;
         fanChart.data.datasets[0].data = fans;
         fanChart.update('none');
         
-        // Update data log table (last 20 entries, newest first)
+        // Update data log table
         updateTable(data.slice(-20).reverse());
         
     } catch (error) {
@@ -209,20 +359,20 @@ function updateTable(data) {
     tableBody.innerHTML = '';
     
     if (data.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No data available</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b;">Chưa có dữ liệu</td></tr>';
         return;
     }
     
     data.forEach(row => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${new Date(row.timestamp).toLocaleString()}</td>
+            <td>${new Date(row.timestamp).toLocaleString('vi-VN')}</td>
             <td>${row.temperature.toFixed(1)}</td>
             <td>${row.moisture.toFixed(1)}</td>
             <td>${row.temp_error.toFixed(2)}</td>
             <td>${row.fan_pwm}</td>
             <td class="${row.pump_active ? 'pump-on' : 'pump-off'}">
-                ${row.pump_active ? 'ON' : 'OFF'}
+                ${row.pump_active ? 'BẬT' : 'TẮT'}
             </td>
         `;
         tableBody.appendChild(tr);
@@ -231,7 +381,7 @@ function updateTable(data) {
 
 // Initialize dashboard
 function init() {
-    console.log('BioLoop Monitor Dashboard initialized');
+    console.log('BioLoop Monitor Scientific Dashboard initialized');
     
     // Initialize charts
     initCharts();
@@ -241,7 +391,7 @@ function init() {
     fetchHistory();
     
     // Set up auto-refresh intervals
-    setInterval(fetchLatest, 3000);  // Update status every 3 seconds
+    setInterval(fetchLatest, 3000);   // Update status every 3 seconds
     setInterval(fetchHistory, 10000); // Update charts/table every 10 seconds
 }
 
