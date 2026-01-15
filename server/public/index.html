@@ -450,6 +450,220 @@
             font-size: 12px;
             margin-left: 20px;
         }
+        
+        /* Chatbot styles */
+        .chatbot-button {
+            position: fixed;
+            bottom: 20px;
+            right: 80px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+            font-size: 28px;
+            color: white;
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+        .chatbot-button:hover {
+            transform: scale(1.1);
+        }
+        .chatbot-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .chatbot-window {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 380px;
+            height: 550px;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+            border-radius: 16px;
+            border: 2px solid #8b5cf6;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+        }
+        .chatbot-window.active {
+            display: flex;
+        }
+        .chatbot-header {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            padding: 15px 20px;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chatbot-header h3 {
+            color: white;
+            font-size: 16px;
+            margin: 0;
+        }
+        .chatbot-status {
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+        }
+        .chatbot-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+            line-height: 1;
+        }
+        .chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .chat-message {
+            display: flex;
+            gap: 8px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-message.bot {
+            align-self: flex-start;
+        }
+        .chat-message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .chat-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .chat-message.user .chat-avatar {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+        }
+        .chat-bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .chat-message.bot .chat-bubble {
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #e2e8f0;
+        }
+        .chat-message.user .chat-bubble {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+        }
+        .chat-timestamp {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .quick-replies {
+            padding: 10px 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .quick-reply-btn {
+            padding: 8px 12px;
+            background: rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 20px;
+            color: #e2e8f0;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-reply-btn:hover {
+            background: rgba(139, 92, 246, 0.4);
+            border-color: #8b5cf6;
+        }
+        .chatbot-input-area {
+            padding: 15px;
+            border-top: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            gap: 10px;
+        }
+        .chatbot-input {
+            flex: 1;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 20px;
+            color: #e2e8f0;
+            font-size: 13px;
+            outline: none;
+        }
+        .chatbot-input:focus {
+            border-color: #8b5cf6;
+            background: rgba(255,255,255,0.08);
+        }
+        .chatbot-send {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        .chatbot-send:hover {
+            transform: scale(1.1);
+        }
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #8b5cf6;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
     </style>
 </head>
 <body>
@@ -668,6 +882,36 @@
     <!-- Help Button -->
     <div class="help-button" onclick="toggleHelp()">?</div>
     
+    <!-- Chatbot Button -->
+    <div class="chatbot-button" onclick="toggleChatbot()">
+        💬
+        <span class="chatbot-badge" id="chat-badge" style="display: none;">1</span>
+    </div>
+    
+    <!-- Chatbot Window -->
+    <div class="chatbot-window" id="chatbot-window">
+        <div class="chatbot-header">
+            <div>
+                <h3>🤖 BioLoop AI Assistant</h3>
+                <div class="chatbot-status">● Online - Sẵn sàng hỗ trợ</div>
+            </div>
+            <span class="chatbot-close" onclick="toggleChatbot()">&times;</span>
+        </div>
+        
+        <div class="chatbot-messages" id="chat-messages">
+            <!-- Messages will be added here -->
+        </div>
+        
+        <div class="quick-replies" id="quick-replies">
+            <!-- Quick reply buttons will be added here -->
+        </div>
+        
+        <div class="chatbot-input-area">
+            <input type="text" class="chatbot-input" id="chat-input" placeholder="Nhập câu hỏi của bạn..." onkeypress="handleChatKeypress(event)">
+            <button class="chatbot-send" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+    
     <!-- Help Overlay -->
     <div class="help-overlay" id="help-overlay" onclick="toggleHelp()"></div>
     
@@ -766,6 +1010,221 @@
             panel.classList.toggle('active');
             overlay.classList.toggle('active');
         }
+        
+        // Chatbot functionality
+        let chatHistory = [];
+        let currentData = null;
+        
+        const quickReplies = [
+            "Nhiệt độ hiện tại là bao nhiêu?",
+            "Hệ thống hoạt động như thế nào?",
+            "Tại sao máy bơm bật?",
+            "Giai đoạn sinh học là gì?",
+            "Làm sao tăng hiệu quả?",
+            "Chỉ số ổn định nghĩa là gì?"
+        ];
+        
+        const knowledgeBase = {
+            "nhiệt độ": {
+                keywords: ["nhiệt độ", "nóng", "lạnh", "độ c", "temperature"],
+                response: (data) => `Nhiệt độ hiện tại là ${data?.temperature?.toFixed(1) || '--'}°C. Mục tiêu tối ưu là 50°C (vùng 45-55°C). ${data?.temperature > 55 ? '⚠️ Nhiệt độ hơi cao, quạt đang làm mát.' : data?.temperature < 45 ? '📉 Nhiệt độ thấp, cần tăng hoạt động vi sinh vật.' : '✅ Nhiệt độ trong vùng tối ưu!'}`
+            },
+            "độ ẩm": {
+                keywords: ["độ ẩm", "ẩm", "khô", "nước", "moisture"],
+                response: (data) => `Độ ẩm hiện tại là ${data?.moisture?.toFixed(1) || '--'}%. Mục tiêu tối ưu là 55% (vùng 50-60%). ${data?.moisture < 45 ? '⚠️ Quá khô, máy bơm sẽ tự động bật.' : data?.moisture > 65 ? '⚠️ Quá ẩm, quạt đang làm khô.' : '✅ Độ ẩm trong vùng tối ưu!'}`
+            },
+            "máy bơm": {
+                keywords: ["máy bơm", "bơm", "pump", "tưới"],
+                response: (data) => `Máy bơm hiện tại: ${data?.pump_active ? '🟢 BẬT' : '⚪ TẮT'}. Máy bơm tự động bật khi độ ẩm < 45% và tắt khi > 60%. ${data?.pump_active ? 'Đang tưới nước để tăng độ ẩm.' : 'Độ ẩm đủ, không cần tưới.'}`
+            },
+            "quạt": {
+                keywords: ["quạt", "fan", "gió", "thông gió"],
+                response: (data) => `Tốc độ quạt: ${data?.fan_pwm || '--'} PWM. Fuzzy Logic tự động điều chỉnh dựa trên nhiệt độ. Quạt cung cấp oxy cho vi sinh vật và làm mát khi cần.`
+            },
+            "giai đoạn": {
+                keywords: ["giai đoạn", "phase", "mesophilic", "thermophilic", "maturation"],
+                response: (data) => {
+                    const temp = data?.temperature || 0;
+                    if (temp >= 45 && temp <= 65) return "🔥 Đang ở giai đoạn THERMOPHILIC (45-65°C): Vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh và cỏ dại. Đây là giai đoạn quan trọng nhất!";
+                    if (temp >= 20 && temp < 45) return "🌡️ Đang ở giai đoạn MESOPHILIC (20-40°C): Vi sinh vật ưa ấm phân hủy chất hữu cơ dễ phân hủy. Giai đoạn khởi đầu.";
+                    return "❄️ Đang ở giai đoạn MATURATION (<20°C): Compost đang ổn định và trưởng thành, sẵn sàng sử dụng.";
+                }
+            },
+            "hoạt động": {
+                keywords: ["hoạt động", "làm việc", "work", "system", "hệ thống"],
+                response: () => "🔄 Hệ thống hoạt động tự động 24/7:\n1. Cảm biến đo nhiệt độ & độ ẩm mỗi 5 giây\n2. Fuzzy Logic phân tích và quyết định\n3. Điều khiển quạt (PWM 0-255) và máy bơm (ON/OFF)\n4. Gửi dữ liệu lên cloud real-time\n5. Dashboard cập nhật tự động"
+            },
+            "fuzzy logic": {
+                keywords: ["fuzzy", "logic", "thuật toán", "ai", "điều khiển"],
+                response: () => "🧠 Fuzzy Logic là thuật toán điều khiển mờ, mô phỏng tư duy con người:\n• Input: Nhiệt độ sai số (temp_error)\n• Output: Tốc độ quạt (PWM)\n• Ưu điểm: Điều khiển mượt mà, không bật/tắt đột ngột\n• Kết quả: Duy trì nhiệt độ ổn định ±2°C"
+            },
+            "chỉ số": {
+                keywords: ["chỉ số", "stability", "ổn định", "index"],
+                response: () => "📊 Chỉ số Ổn Định (0-100) đánh giá hiệu quả hệ thống:\n• 80-100: Xuất sắc ✨\n• 60-79: Tốt ✅\n• 40-59: Trung bình ⚠️\n• <40: Cần kiểm tra ❌\n\nTính toán dựa trên 20 lần đo gần nhất trong vùng tối ưu."
+            },
+            "lợi ích": {
+                keywords: ["lợi ích", "benefit", "tiết kiệm", "roi", "kinh tế"],
+                response: () => "💰 Lợi ích kinh tế:\n• 95% tỷ lệ thành công\n• 60% tiết kiệm thời gian\n• 70% giảm chi phí nhân công\n• 3 tháng hoàn vốn (ROI)\n• Chất lượng compost ổn định\n• Giám sát từ xa 24/7"
+            },
+            "cài đặt": {
+                keywords: ["cài đặt", "setup", "install", "config"],
+                response: () => "⚙️ Hệ thống đã được cấu hình tối ưu:\n• ESP32 + WiFi\n• Cảm biến DS18B20 (nhiệt độ)\n• Cảm biến độ ẩm đất V2.0\n• Relay 2 kênh ACTIVE HIGH\n• Server Node.js + SQLite\n• Dashboard real-time"
+            },
+            "default": {
+                keywords: [],
+                response: () => "Xin lỗi, tôi chưa hiểu câu hỏi của bạn. Bạn có thể hỏi về:\n• Nhiệt độ và độ ẩm hiện tại\n• Cách hệ thống hoạt động\n• Giai đoạn sinh học\n• Fuzzy Logic\n• Lợi ích kinh tế\n\nHoặc chọn câu hỏi gợi ý bên dưới! 👇"
+            }
+        };
+        
+        function toggleChatbot() {
+            const window = document.getElementById('chatbot-window');
+            const badge = document.getElementById('chat-badge');
+            window.classList.toggle('active');
+            badge.style.display = 'none';
+            
+            if (window.classList.contains('active') && chatHistory.length === 0) {
+                initChatbot();
+            }
+        }
+        
+        function initChatbot() {
+            addBotMessage("Xin chào! 👋 Tôi là BioLoop AI Assistant. Tôi có thể giúp bạn hiểu về hệ thống giám sát compost.\n\nBạn muốn biết điều gì?");
+            renderQuickReplies();
+        }
+        
+        function addBotMessage(text) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message bot';
+            messageDiv.innerHTML = `
+                <div class="chat-avatar">🤖</div>
+                <div>
+                    <div class="chat-bubble">${text.replace(/\n/g, '<br>')}</div>
+                    <div class="chat-timestamp">${new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</div>
+                </div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            chatHistory.push({role: 'bot', text, time: new Date()});
+        }
+        
+        function addUserMessage(text) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message user';
+            messageDiv.innerHTML = `
+                <div class="chat-avatar">👤</div>
+                <div>
+                    <div class="chat-bubble">${text}</div>
+                    <div class="chat-timestamp">${new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}</div>
+                </div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            chatHistory.push({role: 'user', text, time: new Date()});
+        }
+        
+        function showTypingIndicator() {
+            const messagesDiv = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message bot';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="chat-avatar">🤖</div>
+                <div class="chat-bubble">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typing-indicator');
+            if (typingDiv) typingDiv.remove();
+        }
+        
+        function renderQuickReplies() {
+            const repliesDiv = document.getElementById('quick-replies');
+            repliesDiv.innerHTML = '';
+            quickReplies.forEach(reply => {
+                const btn = document.createElement('button');
+                btn.className = 'quick-reply-btn';
+                btn.textContent = reply;
+                btn.onclick = () => handleQuickReply(reply);
+                repliesDiv.appendChild(btn);
+            });
+        }
+        
+        function handleQuickReply(text) {
+            addUserMessage(text);
+            processMessage(text);
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            addUserMessage(text);
+            input.value = '';
+            processMessage(text);
+        }
+        
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function processMessage(text) {
+            showTypingIndicator();
+            
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = getAIResponse(text);
+                addBotMessage(response);
+            }, 800 + Math.random() * 400);
+        }
+        
+        function getAIResponse(text) {
+            const lowerText = text.toLowerCase();
+            
+            // Find matching knowledge base entry
+            for (const [key, value] of Object.entries(knowledgeBase)) {
+                if (key === 'default') continue;
+                
+                const matched = value.keywords.some(keyword => 
+                    lowerText.includes(keyword.toLowerCase())
+                );
+                
+                if (matched) {
+                    return typeof value.response === 'function' 
+                        ? value.response(currentData) 
+                        : value.response;
+                }
+            }
+            
+            return knowledgeBase.default.response();
+        }
+        
+        // Update current data for context-aware responses
+        async function updateChatbotContext() {
+            try {
+                const response = await fetch('/api/data/latest');
+                currentData = await response.json();
+            } catch (error) {
+                console.error('Error updating chatbot context:', error);
+            }
+        }
+        
+        // Update context every 5 seconds
+        setInterval(updateChatbotContext, 5000);
+        updateChatbotContext();
     </script>
     <script src="dashboard.js"></script>
 </body>
