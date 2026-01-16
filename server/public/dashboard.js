@@ -299,7 +299,7 @@ async function fetchLatest() {
             updatePhaseIndicator(data.temperature);
             
             // Update timestamp
-            document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleString('vi-VN');
+            document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
         }
     } catch (error) {
         console.error('Error fetching latest data:', error);
@@ -365,8 +365,12 @@ function updateTable(data) {
     
     data.forEach(row => {
         const tr = document.createElement('tr');
+        // Convert UTC to Vietnam time (GMT+7)
+        const date = new Date(row.timestamp);
+        const vnTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
+        
         tr.innerHTML = `
-            <td>${new Date(row.timestamp).toLocaleString('vi-VN')}</td>
+            <td>${vnTime.toLocaleString('vi-VN')}</td>
             <td>${row.temperature.toFixed(1)}</td>
             <td>${row.moisture.toFixed(1)}</td>
             <td>${row.temp_error.toFixed(2)}</td>
