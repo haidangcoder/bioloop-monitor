@@ -364,12 +364,16 @@
         /* Tooltip for status cards - adjust position */
         .status-card .tooltip .tooltiptext {
             bottom: auto;
-            top: 100%;
-            margin-top: 10px;
+            top: 110%;
+            margin-top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
         }
         .status-card .tooltip .tooltiptext::after {
             top: auto;
             bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
             border-color: transparent transparent #4ade80 transparent;
         }
         .tooltip-title {
