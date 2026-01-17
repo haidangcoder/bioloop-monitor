@@ -390,23 +390,6 @@
             const data = caseData[caseNum];
             demoStartTime = Date.now();
             
-            // Send override command to server for ESP32
-            fetch('/api/demo/override', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    case_num: caseNum,
-                    fan_pwm: data.start_fan,
-                    pump_active: data.start_pump
-                })
-            }).then(function(response) {
-                return response.json();
-            }).then(function(result) {
-                console.log('Override command sent:', result);
-            }).catch(function(error) {
-                console.error('Error sending override:', error);
-            });
-            
             // Update status
             document.getElementById('status-message').textContent = `🎬 Case ${caseNum} đang chạy - Quan sát phản ứng Fuzzy Logic`;
             document.getElementById('status-detail').textContent = `Hệ thống đang điều chỉnh từ từ về trạng thái lý tưởng (30 giây)`;
@@ -425,7 +408,20 @@
                 const currentFan = Math.round(data.start_fan + (data.target_fan - data.start_fan) * easeProgress);
                 const currentPump = progress < 0.5 ? data.start_pump : data.target_pump;
                 
-                // Send interpolated data to server
+                // Send override command to ESP32 (real-time hardware control)
+                fetch('/api/demo/override', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        case_num: caseNum,
+                        fan_pwm: currentFan,
+                        pump_active: currentPump
+                    })
+                }).catch(function(error) {
+                    console.error('Error sending override:', error);
+                });
+                
+                // Send interpolated data to server (for dashboard display)
                 fetch('/api/data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
