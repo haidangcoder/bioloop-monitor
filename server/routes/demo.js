@@ -16,27 +16,38 @@ router.post('/override', (req, res) => {
     });
   }
   
-  // Store override command in database
-  const sql = `
-    INSERT INTO demo_override (case_num, fan_pwm, pump_active, active)
-    VALUES (?, ?, ?, 1)
-  `;
-  
-  db.run(sql, [case_num, fan_pwm, pump_active ? 1 : 0], function(err) {
+  // Clear old overrides first
+  db.run('DELETE FROM demo_override WHERE active = 1', [], (err) => {
     if (err) {
-      console.error('[DEMO] Database error:', err.message);
-      return res.status(500).json({ 
-        success: false, 
-        error: err.message 
-      });
+      console.error('[DEMO] Error clearing old overrides:', err.message);
     }
     
-    console.log(`[DEMO] Override set: Case ${case_num}, Fan=${fan_pwm}, Pump=${pump_active}`);
+    // Store override command in database
+    const sql = `
+      INSERT INTO demo_override (case_num, fan_pwm, pump_active, active)
+      VALUES (?, ?, ?, 1)
+    `;
     
-    res.json({ 
-      success: true, 
-      id: this.lastID,
-      message: `Demo Case ${case_num} activated`
+    // Force pump_active to integer (0 or 1)
+    const pumpInt = pump_active ? 1 : 0;
+    console.log(`[DEMO] Storing: case=${case_num}, fan=${fan_pwm}, pump=${pumpInt}`);
+    
+    db.run(sql, [case_num, fan_pwm, pumpInt], function(err) {
+      if (err) {
+        console.error('[DEMO] Database error:', err.message);
+        return res.status(500).json({ 
+          success: false, 
+          error: err.message 
+        });
+      }
+      
+      console.log(`[DEMO] Override set: Case ${case_num}, Fan=${fan_pwm}, Pump=${pumpInt}`);
+      
+      res.json({ 
+        success: true, 
+        id: this.lastID,
+        message: `Demo Case ${case_num} activated`
+      });
     });
   });
 });
