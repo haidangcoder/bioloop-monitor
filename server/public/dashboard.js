@@ -102,26 +102,62 @@ function getStabilityLabel(index) {
     return { text: 'Cảnh báo - Kiểm tra hệ thống', color: '#ef4444' };
 }
 
-// Update chart target lines based on current phase
+// Update chart target lines and optimal zones based on current phase
 function updateChartTargets(phaseNum, targetTemp) {
     const phase = getBiologicalPhase(phaseNum);
     
-    // Update temperature chart target line
+    // Define optimal ranges for each phase
+    let tempOptimalMin, tempOptimalMax;
+    let moistureOptimalMin, moistureOptimalMax;
+    
+    if (phaseNum === 1) {
+        // Phase 1: Mesophilic (20-40°C)
+        tempOptimalMin = 30;
+        tempOptimalMax = 40;
+        moistureOptimalMin = 50;
+        moistureOptimalMax = 60;
+    } else if (phaseNum === 2) {
+        // Phase 2: Thermophilic (45-65°C)
+        tempOptimalMin = 45;
+        tempOptimalMax = 55;
+        moistureOptimalMin = 50;
+        moistureOptimalMax = 60;
+    } else {
+        // Phase 3: Maturation (<40°C)
+        tempOptimalMin = 25;
+        tempOptimalMax = 35;
+        moistureOptimalMin = 40;
+        moistureOptimalMax = 50;
+    }
+    
+    // Update temperature chart
     if (tempChart && tempChart.options.plugins.annotation) {
+        // Update optimal zone (green box)
+        tempChart.options.plugins.annotation.annotations.optimalZone.yMin = tempOptimalMin;
+        tempChart.options.plugins.annotation.annotations.optimalZone.yMax = tempOptimalMax;
+        
+        // Update target line
         tempChart.options.plugins.annotation.annotations.optimalLine.yMin = targetTemp;
         tempChart.options.plugins.annotation.annotations.optimalLine.yMax = targetTemp;
         tempChart.options.plugins.annotation.annotations.optimalLine.label.content = `Mục tiêu: ${targetTemp}°C`;
+        
         tempChart.update('none');
     }
     
-    // Update moisture chart target line based on phase
+    // Update moisture chart
     let moistureTarget = 55;  // Default
     if (phaseNum === 3) moistureTarget = 45;  // Maturation phase: lower moisture
     
     if (moistureChart && moistureChart.options.plugins.annotation) {
+        // Update optimal zone (green box)
+        moistureChart.options.plugins.annotation.annotations.optimalZone.yMin = moistureOptimalMin;
+        moistureChart.options.plugins.annotation.annotations.optimalZone.yMax = moistureOptimalMax;
+        
+        // Update target line
         moistureChart.options.plugins.annotation.annotations.optimalLine.yMin = moistureTarget;
         moistureChart.options.plugins.annotation.annotations.optimalLine.yMax = moistureTarget;
         moistureChart.options.plugins.annotation.annotations.optimalLine.label.content = `Mục tiêu: ${moistureTarget}%`;
+        
         moistureChart.update('none');
     }
 }
