@@ -104,6 +104,8 @@ function getStabilityLabel(index) {
 
 // Update chart target lines and optimal zones based on current phase
 function updateChartTargets(phaseNum, targetTemp) {
+    console.log('[DEBUG] updateChartTargets called:', { phaseNum, targetTemp });
+    
     const phase = getBiologicalPhase(phaseNum);
     
     // Define optimal ranges for each phase
@@ -130,6 +132,11 @@ function updateChartTargets(phaseNum, targetTemp) {
         moistureOptimalMax = 50;
     }
     
+    console.log('[DEBUG] Optimal ranges:', { 
+        temp: `${tempOptimalMin}-${tempOptimalMax}°C`,
+        moisture: `${moistureOptimalMin}-${moistureOptimalMax}%`
+    });
+    
     // Update temperature chart
     if (tempChart && tempChart.options.plugins.annotation) {
         // Update optimal zone (green box)
@@ -141,6 +148,7 @@ function updateChartTargets(phaseNum, targetTemp) {
         tempChart.options.plugins.annotation.annotations.optimalLine.yMax = targetTemp;
         tempChart.options.plugins.annotation.annotations.optimalLine.label.content = `Mục tiêu: ${targetTemp}°C`;
         
+        console.log('[DEBUG] Temperature chart updated');
         tempChart.update('none');
     }
     
@@ -158,6 +166,7 @@ function updateChartTargets(phaseNum, targetTemp) {
         moistureChart.options.plugins.annotation.annotations.optimalLine.yMax = moistureTarget;
         moistureChart.options.plugins.annotation.annotations.optimalLine.label.content = `Mục tiêu: ${moistureTarget}%`;
         
+        console.log('[DEBUG] Moisture chart updated');
         moistureChart.update('none');
     }
 }
