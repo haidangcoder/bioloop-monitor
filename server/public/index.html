@@ -1221,62 +1221,89 @@
         
         const quickReplies = [
             "Nhiệt độ hiện tại là bao nhiêu?",
-            "Hệ thống hoạt động như thế nào?",
+            "Đang ở giai đoạn nào?",
+            "Hệ thống chuyển pha như thế nào?",
             "Tại sao máy bơm bật?",
-            "Giai đoạn sinh học là gì?",
-            "Làm sao tăng hiệu quả?",
-            "Chỉ số ổn định nghĩa là gì?"
+            "Fuzzy Logic là gì?",
+            "Lợi ích kinh tế?"
         ];
         
         const knowledgeBase = {
             "nhiệt độ": {
-                keywords: ["nhiệt độ", "nóng", "lạnh", "độ c", "temperature"],
-                response: (data) => `Nhiệt độ hiện tại là ${data?.temperature?.toFixed(1) || '--'}°C. Mục tiêu tối ưu là 50°C (vùng 45-55°C). ${data?.temperature > 55 ? '⚠️ Nhiệt độ hơi cao, quạt đang làm mát.' : data?.temperature < 45 ? '📉 Nhiệt độ thấp, cần tăng hoạt động vi sinh vật.' : '✅ Nhiệt độ trong vùng tối ưu!'}`
+                keywords: ["nhiệt độ", "nóng", "lạnh", "độ c", "temperature", "mục tiêu"],
+                response: (data) => {
+                    const phase = data?.phase || 1;
+                    const targetTemp = data?.target_temp || 35.0;
+                    const currentTemp = data?.temperature || 0;
+                    
+                    let phaseInfo = "";
+                    if (phase === 1) phaseInfo = "Pha Ấm (Mesophilic) - Mục tiêu: 35°C";
+                    else if (phase === 2) phaseInfo = "Pha Nhiệt Cao (Thermophilic) - Mục tiêu: 52.5°C";
+                    else phaseInfo = "Pha Ổn Định (Maturation) - Mục tiêu: 35°C";
+                    
+                    return `Nhiệt độ hiện tại: ${currentTemp.toFixed(1)}°C\n📍 ${phaseInfo}\n${currentTemp > targetTemp + 5 ? '⚠️ Nhiệt độ cao, quạt đang làm mát.' : currentTemp < targetTemp - 5 ? '📉 Nhiệt độ thấp, cần tăng hoạt động vi sinh vật.' : '✅ Nhiệt độ phù hợp với giai đoạn hiện tại!'}`;
+                }
             },
             "độ ẩm": {
                 keywords: ["độ ẩm", "ẩm", "khô", "nước", "moisture"],
-                response: (data) => `Độ ẩm hiện tại là ${data?.moisture?.toFixed(1) || '--'}%. Mục tiêu tối ưu là 55% (vùng 50-60%). ${data?.moisture < 45 ? '⚠️ Quá khô, máy bơm sẽ tự động bật.' : data?.moisture > 65 ? '⚠️ Quá ẩm, quạt đang làm khô.' : '✅ Độ ẩm trong vùng tối ưu!'}`
+                response: (data) => {
+                    const phase = data?.phase || 1;
+                    const moisture = data?.moisture || 0;
+                    let targetRange = phase === 3 ? "40-50%" : "50-60%";
+                    
+                    return `Độ ẩm hiện tại: ${moisture.toFixed(1)}%\n🎯 Mục tiêu: ${targetRange}\n${moisture < 40 ? '⚠️ Quá khô, máy bơm sẽ tự động bật.' : moisture > 65 ? '⚠️ Quá ẩm, quạt đang làm khô.' : '✅ Độ ẩm trong vùng tối ưu!'}`;
+                }
             },
             "máy bơm": {
                 keywords: ["máy bơm", "bơm", "pump", "tưới"],
-                response: (data) => `Máy bơm hiện tại: ${data?.pump_active ? '🟢 BẬT' : '⚪ TẮT'}. Máy bơm tự động bật khi độ ẩm < 45% và tắt khi > 60%. ${data?.pump_active ? 'Đang tưới nước để tăng độ ẩm.' : 'Độ ẩm đủ, không cần tưới.'}`
+                response: (data) => `Máy bơm hiện tại: ${data?.pump_active ? '🟢 BẬT' : '⚪ TẮT'}. Máy bơm tự động bật khi độ ẩm < 35% (ngưỡng ON) và tắt khi > 25% (ngưỡng OFF). Sử dụng hysteresis để tránh bật/tắt liên tục. ${data?.pump_active ? 'Đang tưới nước để tăng độ ẩm.' : 'Độ ẩm đủ, không cần tưới.'}`
             },
             "quạt": {
                 keywords: ["quạt", "fan", "gió", "thông gió"],
-                response: (data) => `Tốc độ quạt: ${data?.fan_pwm || '--'} PWM. Fuzzy Logic tự động điều chỉnh dựa trên nhiệt độ. Quạt cung cấp oxy cho vi sinh vật và làm mát khi cần.`
+                response: (data) => `Tốc độ quạt: ${data?.fan_pwm || '--'} PWM (0-255). Fuzzy Logic tự động điều chỉnh dựa trên sai số nhiệt độ so với mục tiêu thích ứng. Quạt cung cấp oxy cho vi sinh vật và làm mát khi cần.`
             },
             "giai đoạn": {
-                keywords: ["giai đoạn", "phase", "mesophilic", "thermophilic", "maturation"],
+                keywords: ["giai đoạn", "phase", "mesophilic", "thermophilic", "maturation", "pha", "chuyển pha"],
                 response: (data) => {
+                    const phase = data?.phase || 1;
                     const temp = data?.temperature || 0;
-                    if (temp >= 45 && temp <= 65) return "🔥 Đang ở giai đoạn THERMOPHILIC (45-65°C): Vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh và cỏ dại. Đây là giai đoạn quan trọng nhất!";
-                    if (temp >= 20 && temp < 45) return "🌡️ Đang ở giai đoạn MESOPHILIC (20-40°C): Vi sinh vật ưa ấm phân hủy chất hữu cơ dễ phân hủy. Giai đoạn khởi đầu.";
-                    return "❄️ Đang ở giai đoạn MATURATION (<20°C): Compost đang ổn định và trưởng thành, sẵn sàng sử dụng.";
+                    
+                    if (phase === 1) {
+                        return "🌡️ **PHA 1: MESOPHILIC (Pha Ấm)**\n• Nhiệt độ: 20-40°C, Mục tiêu: 35°C\n• Thời gian: 3-7 ngày\n• Vi sinh vật ưa ấm phân hủy chất hữu cơ dễ tiêu\n• Nhiệt độ tăng dần tự nhiên\n\n➡️ Chuyển sang Pha 2 khi nhiệt độ ≥ 45°C";
+                    } else if (phase === 2) {
+                        return "🔥 **PHA 2: THERMOPHILIC (Pha Nhiệt Cao)**\n• Nhiệt độ: 45-65°C, Mục tiêu: 52.5°C\n• Thời gian: 2-4 tuần (tối thiểu 14 ngày)\n• Vi sinh vật ưa nhiệt hoạt động mạnh\n• Tiêu diệt mầm bệnh, ký sinh trùng, hạt cỏ dại\n• Giai đoạn QUAN TRỌNG NHẤT!\n\n➡️ Chuyển sang Pha 3 khi nhiệt độ < 40°C VÀ đã qua 14 ngày";
+                    } else {
+                        return "🌱 **PHA 3: MATURATION (Pha Ổn Định)**\n• Nhiệt độ: <40°C, Mục tiêu: 35°C\n• Thời gian: 2-4 tuần\n• Vi sinh vật mesophilic trở lại\n• Hình thành humus ổn định\n• Compost trưởng thành, sẵn sàng sử dụng\n\n✅ Giai đoạn cuối cùng!";
+                    }
                 }
+            },
+            "chuyển pha": {
+                keywords: ["chuyển pha", "transition", "tự động", "adaptive"],
+                response: () => "🔄 **HỆ THỐNG CHUYỂN PHA TỰ ĐỘNG:**\n\n**Pha 1 → Pha 2:**\n• Điều kiện: Nhiệt độ ≥ 45°C\n• Mục tiêu mới: 35°C → 52.5°C\n\n**Pha 2 → Pha 3:**\n• Điều kiện: Nhiệt độ < 40°C VÀ thời gian Pha 2 ≥ 14 ngày\n• Mục tiêu mới: 52.5°C → 35°C\n• ⚠️ Nếu chưa đủ 14 ngày, hệ thống sẽ duy trì Pha 2\n\n**Lợi ích:**\n✅ Phản ánh đúng quá trình sinh học\n✅ Tiết kiệm năng lượng 30-40%\n✅ Chất lượng compost tốt hơn"
             },
             "hoạt động": {
                 keywords: ["hoạt động", "làm việc", "work", "system", "hệ thống"],
-                response: () => "🔄 Hệ thống hoạt động tự động 24/7:\n1. Cảm biến đo nhiệt độ & độ ẩm mỗi 5 giây\n2. Fuzzy Logic phân tích và quyết định\n3. Điều khiển quạt (PWM 0-255) và máy bơm (ON/OFF)\n4. Gửi dữ liệu lên cloud real-time\n5. Dashboard cập nhật tự động"
+                response: () => "🔄 Hệ thống hoạt động tự động 24/7:\n1. Cảm biến đo nhiệt độ & độ ẩm mỗi 2 giây\n2. Phát hiện và chuyển pha tự động\n3. Fuzzy Logic phân tích với mục tiêu thích ứng\n4. Điều khiển quạt (PWM 0-255) và máy bơm (ON/OFF)\n5. Gửi dữ liệu lên cloud mỗi 5 giây\n6. Dashboard cập nhật real-time"
             },
             "fuzzy logic": {
                 keywords: ["fuzzy", "logic", "thuật toán", "ai", "điều khiển"],
-                response: () => "🧠 Fuzzy Logic là thuật toán điều khiển mờ, mô phỏng tư duy con người:\n• Input: Nhiệt độ sai số (temp_error)\n• Output: Tốc độ quạt (PWM)\n• Ưu điểm: Điều khiển mượt mà, không bật/tắt đột ngột\n• Kết quả: Duy trì nhiệt độ ổn định ±2°C"
+                response: () => "🧠 Fuzzy Logic là thuật toán điều khiển mờ, mô phỏng tư duy con người:\n• Input: Sai số nhiệt độ (temp - target)\n• Output: Tốc độ quạt (PWM) & Máy bơm (ON/OFF)\n• Ưu điểm: Điều khiển mượt mà, không bật/tắt đột ngột\n• Kết quả: Duy trì nhiệt độ ổn định ±2°C\n• Thích ứng: Mục tiêu thay đổi theo giai đoạn (35°C → 52.5°C → 35°C)"
             },
             "chỉ số": {
-                keywords: ["chỉ số", "stability", "ổn định", "index"],
-                response: () => "📊 Chỉ số Ổn Định (0-100) đánh giá hiệu quả hệ thống:\n• 80-100: Xuất sắc ✨\n• 60-79: Tốt ✅\n• 40-59: Trung bình ⚠️\n• <40: Cần kiểm tra ❌\n\nTính toán dựa trên 20 lần đo gần nhất trong vùng tối ưu."
+                keywords: ["chỉ số", "stability", "ổn định", "index", "hiệu suất"],
+                response: () => "📊 Chỉ số Ổn Định (0-100) đánh giá hiệu quả hệ thống:\n• 80-100: Xuất sắc ✨\n• 60-79: Tốt ✅\n• 40-59: Trung bình ⚠️\n• <40: Cần kiểm tra ❌\n\nTính toán dựa trên 20 lần đo gần nhất trong vùng tối ưu (thay đổi theo pha)."
             },
             "lợi ích": {
                 keywords: ["lợi ích", "benefit", "tiết kiệm", "roi", "kinh tế"],
-                response: () => "💰 Lợi ích kinh tế:\n• 95% tỷ lệ thành công\n• 60% tiết kiệm thời gian\n• 70% giảm chi phí nhân công\n• 3 tháng hoàn vốn (ROI)\n• Chất lượng compost ổn định\n• Giám sát từ xa 24/7"
+                response: () => "💰 Lợi ích kinh tế:\n• 95% tỷ lệ thành công\n• 60% tiết kiệm thời gian\n• 70% giảm chi phí nhân công\n• 3 tháng hoàn vốn (ROI)\n• Chất lượng compost ổn định\n• Giám sát từ xa 24/7\n• Tiết kiệm năng lượng 30-40% (nhờ hệ thống 3 pha)"
             },
             "cài đặt": {
                 keywords: ["cài đặt", "setup", "install", "config"],
-                response: () => "⚙️ Hệ thống đã được cấu hình tối ưu:\n• ESP32 + WiFi\n• Cảm biến DS18B20 (nhiệt độ)\n• Cảm biến độ ẩm đất V2.0\n• Relay 2 kênh ACTIVE HIGH\n• Server Node.js + SQLite\n• Dashboard real-time"
+                response: () => "⚙️ Hệ thống đã được cấu hình tối ưu:\n• ESP32 + WiFi\n• Cảm biến DS18B20 (nhiệt độ) - GPIO 21\n• Cảm biến độ ẩm đất V2.0 - GPIO 35\n• Relay 2 kênh ACTIVE HIGH - GPIO 26, 27\n• Server Node.js + SQLite\n• Dashboard real-time\n• Điều khiển 3 pha thích ứng"
             },
             "default": {
                 keywords: [],
-                response: () => "Xin lỗi, tôi chưa hiểu câu hỏi của bạn. Bạn có thể hỏi về:\n• Nhiệt độ và độ ẩm hiện tại\n• Cách hệ thống hoạt động\n• Giai đoạn sinh học\n• Fuzzy Logic\n• Lợi ích kinh tế\n\nHoặc chọn câu hỏi gợi ý bên dưới! 👇"
+                response: () => "Xin lỗi, tôi chưa hiểu câu hỏi của bạn. Bạn có thể hỏi về:\n• Nhiệt độ và độ ẩm hiện tại\n• Giai đoạn sinh học (3 pha)\n• Cách hệ thống chuyển pha tự động\n• Fuzzy Logic thích ứng\n• Lợi ích kinh tế\n\nHoặc chọn câu hỏi gợi ý bên dưới! 👇"
             }
         };
         
@@ -1430,6 +1457,6 @@
         setInterval(updateChatbotContext, 5000);
         updateChatbotContext();
     </script>
-    <script src="dashboard.js"></script>
+    <script src="dashboard.js?v=2.0"></script>
 </body>
 </html>
