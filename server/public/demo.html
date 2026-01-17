@@ -409,13 +409,14 @@
                 const currentPump = progress < 0.5 ? data.start_pump : data.target_pump;
                 
                 // Send override command to ESP32 (real-time hardware control)
+                // Convert boolean to integer (true → 1, false → 0)
                 fetch('/api/demo/override', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         case_num: caseNum,
                         fan_pwm: currentFan,
-                        pump_active: currentPump
+                        pump_active: currentPump ? 1 : 0  // Force integer
                     })
                 }).catch(function(error) {
                     console.error('Error sending override:', error);
