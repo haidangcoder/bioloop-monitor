@@ -237,16 +237,19 @@ void checkDemoOverride() {
   }
   
   HTTPClient http;
-  String demoUrl = String(SERVER_URL);
-  demoUrl.replace("/api/data", "/api/demo/status");
+  // Build demo status URL
+  const char* DEMO_URL = "https://bioloop-monitor.onrender.com/api/demo/status";
   
-  http.begin(demoUrl);
+  http.begin(DEMO_URL);
   http.setTimeout(2000);  // 2 second timeout
   
   int httpCode = http.GET();
   
+  Serial.printf("[DEMO] Checking override... HTTP %d\n", httpCode);
+  
   if (httpCode == 200) {
     String response = http.getString();
+    Serial.printf("[DEMO] Response: %s\n", response.c_str());
     
     // Parse JSON manually (simple format: {"active":1,"fan":255,"pump":1})
     int activePos = response.indexOf("\"active\":");
@@ -404,16 +407,16 @@ void initActuators() {
   pinMode(PIN_FAN_RELAY, OUTPUT);
   
   // SAFETY: Force both relays OFF at startup
-  // This prevents unintended actuator activation during ESP32 boot/reset.
-  // For ACTIVE HIGH relays: GPIO LOW = relay OFF
-  digitalWrite(PIN_PUMP_RELAY, LOW);
-  digitalWrite(PIN_FAN_RELAY, LOW);
+  // Bơm (GPIO 26): ACTIVE LOW  → HIGH = OFF
+  // Quạt (GPIO 27): ACTIVE HIGH → LOW = OFF
+  digitalWrite(PIN_PUMP_RELAY, HIGH);  // ACTIVE LOW: HIGH = OFF
+  digitalWrite(PIN_FAN_RELAY, LOW);    // ACTIVE HIGH: LOW = OFF
 
   delay(500);
   pumpActive = false;
   fanActive = false;
   
-  Serial.println("[ACTUATORS] Pump relay (GPIO 26) - OFF (ACTIVE HIGH)");
+  Serial.println("[ACTUATORS] Pump relay (GPIO 26) - OFF (ACTIVE LOW)");
   Serial.println("[ACTUATORS] Fan relay (GPIO 27) - OFF (ACTIVE HIGH)");
 }
 
@@ -589,32 +592,32 @@ void runFuzzyControl() {
 // ============================================
 // ACTUATOR CONTROL FUNCTIONS
 // ============================================
-// ACTIVE HIGH relay logic (CORRECTED):
-//   state == true  → GPIO HIGH (relay ON)
-//   state == false → GPIO LOW  (relay OFF)
+// MIXED ACTIVE LOGIC (relay module đặc biệt):
+//   Bơm (GPIO 26): ACTIVE LOW  - LOW = ON, HIGH = OFF
+//   Quạt (GPIO 27): ACTIVE HIGH - HIGH = ON, LOW = OFF
 // ============================================
 void setPump(bool state) {
   pumpActive = state;
-  digitalWrite(PIN_PUMP_RELAY, state ? HIGH : LOW);
+  // ACTIVE LOW: Đảo ngược logic
+  digitalWrite(PIN_PUMP_RELAY, state ? LOW : HIGH);
   
   // Debug: Verify GPIO state
   int gpioState = digitalRead(PIN_PUMP_RELAY);
-  Serial.printf("[DEBUG] Pump: state=%s → GPIO=%s (expected: %s)\n", 
+  Serial.printf("[DEBUG] Pump: state=%s → GPIO=%s (ACTIVE LOW)\n", 
                 state ? "ON" : "OFF",
-                gpioState == LOW ? "LOW" : "HIGH",
-                state ? "HIGH" : "LOW");
+                gpioState == LOW ? "LOW" : "HIGH");
 }
 
 void setFan(bool state) {
   fanActive = state;
+  // ACTIVE HIGH: Logic bình thường
   digitalWrite(PIN_FAN_RELAY, state ? HIGH : LOW);
   
   // Debug: Verify GPIO state
   int gpioState = digitalRead(PIN_FAN_RELAY);
-  Serial.printf("[DEBUG] Fan: state=%s → GPIO=%s (expected: %s)\n", 
+  Serial.printf("[DEBUG] Fan: state=%s → GPIO=%s (ACTIVE HIGH)\n", 
                 state ? "ON" : "OFF",
-                gpioState == LOW ? "LOW" : "HIGH",
-                state ? "HIGH" : "LOW");
+                gpioState == LOW ? "LOW" : "HIGH");
 }
 
 // ============================================
