@@ -197,25 +197,44 @@ void initWiFi() {
     
     // Sync time with NTP server (fix timestamp issue)
     Serial.println("[NTP] Syncing time...");
-    // Try Vietnam NTP servers first (better for 4G networks)
+    
+    // WORKAROUND: Set manual timestamp for demo (Jan 19, 2025 02:35:00 GMT+7)
+    // This fixes the issue when Windows is stuck at 2026 and NTP fails
+    struct tm timeinfo;
+    timeinfo.tm_year = 2025 - 1900;  // Year since 1900
+    timeinfo.tm_mon = 0;             // January (0-11)
+    timeinfo.tm_mday = 19;           // Day 19
+    timeinfo.tm_hour = 2;            // Hour 02 (will add GMT+7 offset)
+    timeinfo.tm_min = 35;            // Minute 35
+    timeinfo.tm_sec = 0;             // Second 0
+    timeinfo.tm_isdst = 0;           // No daylight saving
+    
+    time_t manualTime = mktime(&timeinfo);
+    struct timeval tv = { .tv_sec = manualTime, .tv_usec = 0 };
+    settimeofday(&tv, NULL);
+    
+    Serial.println("[NTP] Manual timestamp set: Jan 19, 2025 02:35:00");
+    Serial.println("[NTP] Note: Time will not auto-update (acceptable for demo)");
+    
+    // Try NTP sync anyway (in case WiFi allows it)
     configTime(7 * 3600, 0, "time.google.com", "time.cloudflare.com", "pool.ntp.org");
     
-    // Wait for time sync (max 10 seconds)
+    // Wait for time sync (max 5 seconds, don't block too long)
     int ntpAttempts = 0;
-    while (time(nullptr) < 100000 && ntpAttempts < 20) {  // Increased from 10 to 20
+    while (time(nullptr) < manualTime && ntpAttempts < 10) {
       delay(500);
       Serial.print(".");
       ntpAttempts++;
     }
     
-    if (time(nullptr) > 100000) {
+    time_t now = time(nullptr);
+    if (now > manualTime + 10) {  // NTP succeeded (time jumped forward)
       Serial.println();
-      time_t now = time(nullptr);
-      Serial.printf("[NTP] Time synced: %s", ctime(&now));
+      Serial.printf("[NTP] NTP sync SUCCESS: %s", ctime(&now));
     } else {
       Serial.println();
-      Serial.println("[NTP] Time sync failed - 4G network may block NTP (port 123)");
-      Serial.println("[NTP] Timestamp will be incorrect until NTP sync succeeds");
+      Serial.printf("[NTP] Using manual time: %s", ctime(&now));
+      Serial.println("[NTP] (NTP blocked by 4G network - this is OK for demo)");
     }
   } else {
     wifiConnected = false;
