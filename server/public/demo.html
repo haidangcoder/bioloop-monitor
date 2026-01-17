@@ -374,16 +374,16 @@
                     target_fan: 40,
                     target_pump: false
                 },
-                3: { // Recovery
+                3: { // Recovery - FORCE PUMP ON
                     case_num: 3,
                     start_temp: 35.0,
                     start_moisture: 30.0,
                     start_fan: 10,
-                    start_pump: true,
+                    start_pump: 1,  // Force integer
                     target_temp: 35.0,  // Phase 1 target
                     target_moisture: 55.0,
                     target_fan: 40,
-                    target_pump: false
+                    target_pump: 1  // Keep pump ON for entire duration
                 }
             };
             
