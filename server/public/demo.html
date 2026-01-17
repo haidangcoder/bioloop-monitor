@@ -322,7 +322,7 @@
                 ESP32 sẽ điều khiển bơm/quạt thật theo case được chọn
             </div>
             <a href="/?v=3.0" class="btn-dashboard" target="_blank">📊 Mở Dashboard</a>
-            <button class="btn-dashboard" onclick="clearDemo()" style="background: #ef4444; margin-left: 10px;">🛑 Tắt Demo Mode</button>
+            <button class="btn-dashboard" onclick="clearDemo(); return false;" style="background: #ef4444; margin-left: 10px;">🛑 Tắt Demo Mode</button>
         </div>
     </div>
     
@@ -458,16 +458,26 @@
         function clearDemo() {
             console.log('Clearing demo');
             
+            // Stop interval
             if (demoInterval) {
                 clearInterval(demoInterval);
                 demoInterval = null;
             }
             
+            // Reset variables
+            currentCase = null;
+            demoStartTime = null;
+            
+            // Update UI
             document.getElementById('status-message').textContent = '✅ Đã dừng demo';
-            document.getElementById('status-detail').textContent = 'Hệ thống quay về chế độ tự động';
-            document.querySelectorAll('.case-card').forEach(card => {
+            document.getElementById('status-detail').textContent = 'Hệ thống quay về chế độ tự động. ESP32 đang đọc dữ liệu thật từ cảm biến.';
+            
+            // Remove active class from all cards
+            document.querySelectorAll('.case-card').forEach(function(card) {
                 card.classList.remove('active');
             });
+            
+            console.log('Demo cleared successfully');
         }
     </script>
 </body>
