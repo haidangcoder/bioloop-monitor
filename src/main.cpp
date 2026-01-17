@@ -62,6 +62,10 @@ const char* SERVER_URL = "https://bioloop-monitor.onrender.com/api/data";  // Re
 // Pump control - Set to false if moisture sensor is unstable
 #define ENABLE_PUMP_CONTROL true  // Enabled - testing with GPIO 35xed
 
+// OFFLINE DEMO MODE - ESP32 works without WiFi/Server
+// Set to true to enable standalone operation (no WiFi required)
+#define OFFLINE_DEMO_MODE false  // false = normal (needs WiFi), true = offline demo
+
 // ============================================
 // PIN DEFINITIONS
 // ============================================
@@ -193,11 +197,12 @@ void initWiFi() {
     
     // Sync time with NTP server (fix timestamp issue)
     Serial.println("[NTP] Syncing time...");
-    configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");  // GMT+7 for Vietnam
+    // Try Vietnam NTP servers first (better for 4G networks)
+    configTime(7 * 3600, 0, "time.google.com", "time.cloudflare.com", "pool.ntp.org");
     
-    // Wait for time sync (max 5 seconds)
+    // Wait for time sync (max 10 seconds)
     int ntpAttempts = 0;
-    while (time(nullptr) < 100000 && ntpAttempts < 10) {
+    while (time(nullptr) < 100000 && ntpAttempts < 20) {  // Increased from 10 to 20
       delay(500);
       Serial.print(".");
       ntpAttempts++;
@@ -209,7 +214,8 @@ void initWiFi() {
       Serial.printf("[NTP] Time synced: %s", ctime(&now));
     } else {
       Serial.println();
-      Serial.println("[NTP] Time sync failed - using default");
+      Serial.println("[NTP] Time sync failed - 4G network may block NTP (port 123)");
+      Serial.println("[NTP] Timestamp will be incorrect until NTP sync succeeds");
     }
   } else {
     wifiConnected = false;
@@ -339,10 +345,22 @@ void setup() {
 #else
   Serial.println("  Control Mode: HARD THRESHOLD (Baseline)");
 #endif
+
+#if OFFLINE_DEMO_MODE
+  Serial.println("  Network Mode: OFFLINE DEMO (No WiFi Required)");
+  wifiConnected = false;  // Skip WiFi entirely
+#else
+  Serial.println("  Network Mode: ONLINE (WiFi Required)");
+#endif
   
   Serial.println("Initializing...\n");
   
+#if !OFFLINE_DEMO_MODE
   initWiFi();
+#else
+  Serial.println("[WIFI] Skipped (Offline Demo Mode)");
+#endif
+  
   initSensors();
   initActuators();
   
@@ -364,7 +382,8 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
   
-  // Auto-reconnect WiFi if disconnected
+  // Auto-reconnect WiFi if disconnected (skip in offline mode)
+#if !OFFLINE_DEMO_MODE
   static unsigned long lastWiFiCheck = 0;
   if (currentMillis - lastWiFiCheck >= 10000) {  // Check every 10 seconds
     lastWiFiCheck = currentMillis;
@@ -398,6 +417,7 @@ void loop() {
     lastDemoCheck = currentMillis;
     checkDemoOverride();
   }
+#endif
   
   // Read sensors at regular intervals
   if (currentMillis - lastSensorRead >= SENSOR_READ_INTERVAL) {
@@ -441,11 +461,13 @@ void loop() {
     logStatus();
   }
   
-  // Send data to server at regular intervals
+  // Send data to server at regular intervals (skip in offline mode)
+#if !OFFLINE_DEMO_MODE
   if (currentMillis - lastHttpSend >= HTTP_SEND_INTERVAL) {
     lastHttpSend = currentMillis;
     sendDataToServer();
   }
+#endif
 }
 
 // ============================================
