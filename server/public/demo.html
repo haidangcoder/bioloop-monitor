@@ -328,8 +328,16 @@
     
     <script>
         let currentCase = null;
+        let demoInterval = null;
+        let demoStartTime = null;
+        const DEMO_DURATION = 30000; // 30 seconds
         
         async function runCase(caseNum) {
+            // Clear any existing demo
+            if (demoInterval) {
+                clearInterval(demoInterval);
+            }
+            
             // Remove active class from all cards
             document.querySelectorAll('.case-card').forEach(card => {
                 card.classList.remove('active');
@@ -340,73 +348,119 @@
             currentCase = caseNum;
             
             // Define test data for each case
-            const testData = {
+            const caseData = {
                 1: { // Critical
                     case_num: 1,
-                    fan_pwm: 255,
-                    pump_active: true
+                    start_temp: 58.0,
+                    start_moisture: 35.0,
+                    start_fan: 255,
+                    start_pump: true,
+                    target_temp: 35.0,  // Phase 1 target
+                    target_moisture: 55.0,
+                    target_fan: 40,
+                    target_pump: false
                 },
                 2: { // Optimal
                     case_num: 2,
-                    fan_pwm: 90,
-                    pump_active: false
+                    start_temp: 52.0,
+                    start_moisture: 55.0,
+                    start_fan: 90,
+                    start_pump: false,
+                    target_temp: 35.0,  // Phase 1 target
+                    target_moisture: 55.0,
+                    target_fan: 40,
+                    target_pump: false
                 },
                 3: { // Recovery
                     case_num: 3,
-                    fan_pwm: 10,
-                    pump_active: true
+                    start_temp: 35.0,
+                    start_moisture: 30.0,
+                    start_fan: 10,
+                    start_pump: true,
+                    target_temp: 35.0,  // Phase 1 target
+                    target_moisture: 55.0,
+                    target_fan: 40,
+                    target_pump: false
                 }
             };
             
-            const data = testData[caseNum];
+            const data = caseData[caseNum];
+            demoStartTime = Date.now();
             
             // Update status
-            document.getElementById('status-message').textContent = `⏳ Đang kích hoạt Case ${caseNum}...`;
-            document.getElementById('status-detail').textContent = `Quạt: ${data.fan_pwm} PWM, Bơm: ${data.pump_active ? 'BẬT' : 'TẮT'}`;
+            document.getElementById('status-message').textContent = `🎬 Case ${caseNum} đang chạy - Quan sát phản ứng Fuzzy Logic`;
+            document.getElementById('status-detail').textContent = `Hệ thống đang điều chỉnh từ từ về trạng thái lý tưởng (30 giây)`;
             
-            try {
-                // Send override command to server
-                const response = await fetch('/api/demo/override', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
+            // Start animation loop
+            demoInterval = setInterval(async () => {
+                const elapsed = Date.now() - demoStartTime;
+                const progress = Math.min(elapsed / DEMO_DURATION, 1.0);
                 
-                const result = await response.json();
+                // Smooth easing function (ease-out)
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
                 
-                if (result.success) {
-                    document.getElementById('status-message').textContent = `✅ Case ${caseNum} đang chạy trên ESP32!`;
-                    document.getElementById('status-detail').textContent = `Bơm và quạt thật sự đang hoạt động theo Case ${caseNum}. Tự động tắt sau 5 phút.`;
-                } else {
-                    document.getElementById('status-message').textContent = `❌ Lỗi: ${result.error}`;
-                    document.getElementById('status-detail').textContent = 'Vui lòng thử lại';
+                // Interpolate values
+                const currentTemp = data.start_temp + (data.target_temp - data.start_temp) * easeProgress;
+                const currentMoisture = data.start_moisture + (data.target_moisture - data.start_moisture) * easeProgress;
+                const currentFan = Math.round(data.start_fan + (data.target_fan - data.start_fan) * easeProgress);
+                const currentPump = progress < 0.5 ? data.start_pump : data.target_pump;
+                
+                // Send interpolated data to server
+                try {
+                    await fetch('/api/data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            temperature: parseFloat(currentTemp.toFixed(1)),
+                            moisture: parseFloat(currentMoisture.toFixed(1)),
+                            temp_error: parseFloat((currentTemp - data.target_temp).toFixed(2)),
+                            fan_pwm: currentFan,
+                            pump: currentPump,
+                            phase: 1,
+                            target_temp: data.target_temp
+                        })
+                    });
+                    
+                    // Update status
+                    const remainingSeconds = Math.ceil((DEMO_DURATION - elapsed) / 1000);
+                    document.getElementById('status-detail').textContent = 
+                        `🌡️ ${currentTemp.toFixed(1)}°C → ${data.target_temp}°C | 💧 ${currentMoisture.toFixed(1)}% → ${data.target_moisture}% | ⏱️ ${remainingSeconds}s`;
+                    
+                } catch (error) {
+                    console.error('Error sending demo data:', error);
                 }
-            } catch (error) {
-                document.getElementById('status-message').textContent = `❌ Lỗi kết nối: ${error.message}`;
-                document.getElementById('status-detail').textContent = 'Kiểm tra server và thử lại';
-            }
+                
+                // End demo after 30 seconds
+                if (progress >= 1.0) {
+                    clearInterval(demoInterval);
+                    demoInterval = null;
+                    
+                    document.getElementById('status-message').textContent = 
+                        `✅ Demo Case ${caseNum} hoàn thành - Quay về chế độ thực`;
+                    document.getElementById('status-detail').textContent = 
+                        'Hệ thống đã ổn định ở trạng thái lý tưởng. Đang đọc dữ liệu thật từ cảm biến.';
+                    
+                    // Remove active state after 3 seconds
+                    setTimeout(() => {
+                        document.querySelectorAll('.case-card').forEach(card => {
+                            card.classList.remove('active');
+                        });
+                    }, 3000);
+                }
+            }, 1000); // Update every 1 second
         }
         
         async function clearDemo() {
-            try {
-                const response = await fetch('/api/demo/clear', {
-                    method: 'POST'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    document.getElementById('status-message').textContent = '✅ Đã tắt demo mode';
-                    document.getElementById('status-detail').textContent = 'Hệ thống quay về chế độ tự động';
-                    document.querySelectorAll('.case-card').forEach(card => {
-                        card.classList.remove('active');
-                    });
-                }
-            } catch (error) {
-                console.error('Error clearing demo:', error);
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
             }
+            
+            document.getElementById('status-message').textContent = '✅ Đã dừng demo';
+            document.getElementById('status-detail').textContent = 'Hệ thống quay về chế độ tự động';
+            document.querySelectorAll('.case-card').forEach(card => {
+                card.classList.remove('active');
+            });
         }
     </script>
 </body>
