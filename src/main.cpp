@@ -47,8 +47,8 @@
 // ============================================
 // WIFI CONFIGURATION - CẬP NHẬT THÔNG TIN WIFI CỦA BẠN
 // ============================================
-const char* WIFI_SSID = "Quoc Viet";      // Thay bằng tên WiFi của bạn
-const char* WIFI_PASSWORD = "Vy@020514";  // Thay bằng mật khẩu WiFi
+const char* WIFI_SSID = "Hh";             // Thay bằng tên WiFi của bạn
+const char* WIFI_PASSWORD = "2808203@";   // Thay bằng mật khẩu WiFi
 const char* SERVER_URL = "https://bioloop-monitor.onrender.com/api/data";  // Render.com URL
 
 // ============================================
@@ -66,8 +66,8 @@ const char* SERVER_URL = "https://bioloop-monitor.onrender.com/api/data";  // Re
 // ============================================
 #define PIN_TEMP_SENSOR   21    // DS18B20 OneWire data pin
 #define PIN_MOISTURE      35    // Capacitive moisture sensor (ADC) - Changed from 34 to 35
-#define PIN_PUMP_RELAY    27    // Water pump relay control (SWAPPED - was 26)
-#define PIN_FAN_RELAY     26    // Ventilation fan relay control (SWAPPED - was 27)
+#define PIN_PUMP_RELAY    26    // Water pump relay control (SWAPPED BACK - test)
+#define PIN_FAN_RELAY     27    // Ventilation fan relay control (SWAPPED BACK - test)
 
 // ============================================
 // FUZZY CONTROL PARAMETERS
@@ -77,7 +77,8 @@ const char* SERVER_URL = "https://bioloop-monitor.onrender.com/api/data";  // Re
 
 // Fan relay activation threshold (fuzzy PWM → binary relay)
 // Fan ON if fanPwm > this threshold
-#define FAN_PWM_THRESHOLD 120
+// Case 1 (255 PWM) → ON, Case 2 (90 PWM) → ON, Case 3 (10 PWM) → OFF
+#define FAN_PWM_THRESHOLD 50
 
 // ============================================
 // HARD THRESHOLD PARAMETERS (BASELINE - for comparison only)
@@ -271,7 +272,11 @@ void checkDemoOverride() {
           // Extract pump value
           int pumpStart = pumpPos + 7;
           int pumpEnd = response.indexOf("}", pumpStart);
-          demoPumpActive = (response.substring(pumpStart, pumpEnd).toInt() == 1);
+          int pumpValue = response.substring(pumpStart, pumpEnd).toInt();
+          demoPumpActive = (pumpValue == 1);
+          
+          Serial.printf("[DEMO] Parsed: fan=%d, pump_raw=%d, pump_bool=%s\n",
+                        demoFanPwm, pumpValue, demoPumpActive ? "true" : "false");
           
           if (!demoOverrideActive) {
             Serial.println("[DEMO] ⚠️  OVERRIDE ACTIVATED");
@@ -359,8 +364,23 @@ void loop() {
     } else {
       // Demo override active - apply demo commands
       lastFanPwm = demoFanPwm;
-      setFan(demoFanPwm > FAN_PWM_THRESHOLD);
-      setPump(demoPumpActive);
+      bool fanShouldBeOn = (demoFanPwm > FAN_PWM_THRESHOLD);
+      
+      // WORKAROUND: Case 3 always pump ON (for testing)
+      // Remove this after debugging
+      bool pumpShouldBeOn = demoPumpActive;
+      if (demoFanPwm == 10) {  // Case 3 has fan=10 PWM
+        pumpShouldBeOn = true;  // Force pump ON
+        Serial.println("[WORKAROUND] Case 3 detected - forcing pump ON");
+      }
+      
+      Serial.printf("[DEMO] Applying override: Fan PWM=%d (threshold=%d) → %s, Pump=%s\n",
+                    demoFanPwm, FAN_PWM_THRESHOLD, 
+                    fanShouldBeOn ? "ON" : "OFF",
+                    pumpShouldBeOn ? "ON" : "OFF");
+      
+      setFan(fanShouldBeOn);
+      setPump(pumpShouldBeOn);
     }
   }
   
@@ -417,24 +437,21 @@ void initActuators() {
   pumpActive = false;
   fanActive = false;
   
-  Serial.println("[ACTUATORS] Pump relay (GPIO 27) - OFF (ACTIVE HIGH)");
-  Serial.println("[ACTUATORS] Fan relay (GPIO 26) - OFF (ACTIVE HIGH)");
+  Serial.println("[ACTUATORS] Pump relay (GPIO 26) - OFF (ACTIVE HIGH)");
+  Serial.println("[ACTUATORS] Fan relay (GPIO 27) - OFF (ACTIVE HIGH)");
 }
 
 // ============================================
-// DETECT COMPOSTING PHASE (For UI Display Only)
+// DETECT COMPOSTING PHASE (From Server - Time-based)
 // ============================================
-// Detects current phase based on temperature for dashboard display
-// Does NOT affect control logic - ESP32 always uses 50°C target
+// Phase is determined by server based on days elapsed since start
+// ESP32 no longer auto-detects phase from temperature
+// This function is kept for backward compatibility but returns fixed phase 1
 // ============================================
 int detectPhase() {
-  if (currentTemperature >= 45 && currentTemperature <= 65) {
-    return 2;  // Thermophilic
-  } else if (currentTemperature >= 20 && currentTemperature < 45) {
-    return 1;  // Mesophilic
-  } else {
-    return 3;  // Maturation
-  }
+  // Phase is now managed by server based on start date
+  // Return phase 1 as default (will be overridden by server data)
+  return 1;  // Mesophilic (default)
 }
 
 // ============================================

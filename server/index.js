@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dataRoutes = require('./routes/data');
 const demoRoutes = require('./routes/demo');
+const phaseRoutes = require('./routes/phase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use(express.static('public'));
 
 app.use('/api/data', dataRoutes);
 app.use('/api/demo', demoRoutes);
+app.use('/api/phase', phaseRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
