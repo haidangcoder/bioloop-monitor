@@ -66,8 +66,8 @@ const char* SERVER_URL = "https://bioloop-monitor.onrender.com/api/data";  // Re
 // ============================================
 #define PIN_TEMP_SENSOR   21    // DS18B20 OneWire data pin
 #define PIN_MOISTURE      35    // Capacitive moisture sensor (ADC) - Changed from 34 to 35
-#define PIN_PUMP_RELAY    26    // Water pump relay control
-#define PIN_FAN_RELAY     27    // Ventilation fan relay control
+#define PIN_PUMP_RELAY    27    // Water pump relay control (SWAPPED - was 26)
+#define PIN_FAN_RELAY     26    // Ventilation fan relay control (SWAPPED - was 27)
 
 // ============================================
 // FUZZY CONTROL PARAMETERS
@@ -407,17 +407,18 @@ void initActuators() {
   pinMode(PIN_FAN_RELAY, OUTPUT);
   
   // SAFETY: Force both relays OFF at startup
-  // Bơm (GPIO 26): ACTIVE LOW  → HIGH = OFF
-  // Quạt (GPIO 27): ACTIVE HIGH → LOW = OFF
+  // CẢ 2 KÊNH ĐỀU ACTIVE LOW
+  // Bơm (GPIO 27): ACTIVE LOW → HIGH = OFF
+  // Quạt (GPIO 26): ACTIVE LOW → HIGH = OFF
   digitalWrite(PIN_PUMP_RELAY, HIGH);  // ACTIVE LOW: HIGH = OFF
-  digitalWrite(PIN_FAN_RELAY, LOW);    // ACTIVE HIGH: LOW = OFF
+  digitalWrite(PIN_FAN_RELAY, HIGH);   // ACTIVE LOW: HIGH = OFF
 
   delay(500);
   pumpActive = false;
   fanActive = false;
   
-  Serial.println("[ACTUATORS] Pump relay (GPIO 26) - OFF (ACTIVE LOW)");
-  Serial.println("[ACTUATORS] Fan relay (GPIO 27) - OFF (ACTIVE HIGH)");
+  Serial.println("[ACTUATORS] Pump relay (GPIO 27) - OFF (ACTIVE LOW)");
+  Serial.println("[ACTUATORS] Fan relay (GPIO 26) - OFF (ACTIVE LOW)");
 }
 
 // ============================================
@@ -592,9 +593,9 @@ void runFuzzyControl() {
 // ============================================
 // ACTUATOR CONTROL FUNCTIONS
 // ============================================
-// MIXED ACTIVE LOGIC (relay module đặc biệt):
-//   Bơm (GPIO 26): ACTIVE LOW  - LOW = ON, HIGH = OFF
-//   Quạt (GPIO 27): ACTIVE HIGH - HIGH = ON, LOW = OFF
+// CẢ 2 KÊNH ĐỀU ACTIVE LOW:
+//   Bơm (GPIO 27): ACTIVE LOW - LOW = ON, HIGH = OFF
+//   Quạt (GPIO 26): ACTIVE LOW - LOW = ON, HIGH = OFF
 // ============================================
 void setPump(bool state) {
   pumpActive = state;
@@ -610,12 +611,12 @@ void setPump(bool state) {
 
 void setFan(bool state) {
   fanActive = state;
-  // ACTIVE HIGH: Logic bình thường
-  digitalWrite(PIN_FAN_RELAY, state ? HIGH : LOW);
+  // ACTIVE LOW: Đảo ngược logic
+  digitalWrite(PIN_FAN_RELAY, state ? LOW : HIGH);
   
   // Debug: Verify GPIO state
   int gpioState = digitalRead(PIN_FAN_RELAY);
-  Serial.printf("[DEBUG] Fan: state=%s → GPIO=%s (ACTIVE HIGH)\n", 
+  Serial.printf("[DEBUG] Fan: state=%s → GPIO=%s (ACTIVE LOW)\n", 
                 state ? "ON" : "OFF",
                 gpioState == LOW ? "LOW" : "HIGH");
 }
