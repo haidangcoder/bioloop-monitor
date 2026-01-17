@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Clamp Function</title>
+</head>
+<body>
+    <h1>Test Clamp to Optimal Range</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Clamp function
+        function clampToOptimalRange(value, min, max) {
+            if (value < min) return min;
+            if (value > max) return max;
+            return value;
+        }
+        
+        // Test cases
+        const tests = [
+            { value: 29.3, min: 30, max: 40, expected: 30, desc: "Temp below min" },
+            { value: 35, min: 30, max: 40, expected: 35, desc: "Temp in range" },
+            { value: 45, min: 30, max: 40, expected: 40, desc: "Temp above max" },
+            { value: 42.9, min: 50, max: 60, expected: 50, desc: "Moisture below min" },
+            { value: 55, min: 50, max: 60, expected: 55, desc: "Moisture in range" },
+            { value: 70, min: 50, max: 60, expected: 60, desc: "Moisture above max" }
+        ];
+        
+        let html = '<table border="1" style="border-collapse: collapse; margin: 20px;">';
+        html += '<tr><th>Test</th><th>Value</th><th>Min</th><th>Max</th><th>Result</th><th>Expected</th><th>Status</th></tr>';
+        
+        tests.forEach(test => {
+            const result = clampToOptimalRange(test.value, test.min, test.max);
+            const status = result === test.expected ? '✅ PASS' : '❌ FAIL';
+            html += `<tr>
+                <td>${test.desc}</td>
+                <td>${test.value}</td>
+                <td>${test.min}</td>
+                <td>${test.max}</td>
+                <td><strong>${result}</strong></td>
+                <td>${test.expected}</td>
+                <td>${status}</td>
+            </tr>`;
+        });
+        
+        html += '</table>';
+        document.getElementById('results').innerHTML = html;
+        
+        console.log('All tests completed!');
+    </script>
+</body>
+</html>
