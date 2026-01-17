@@ -393,10 +393,60 @@ function init() {
     // Initial data load
     fetchLatest();
     fetchHistory();
+    fetchDailyPerformance();
     
     // Set up auto-refresh intervals
     setInterval(fetchLatest, 3000);   // Update status every 3 seconds
     setInterval(fetchHistory, 10000); // Update charts/table every 10 seconds
+    setInterval(fetchDailyPerformance, 60000); // Update performance every 1 minute
+}
+
+// Fetch daily performance metrics
+async function fetchDailyPerformance() {
+    try {
+        const response = await fetch('/api/data/daily-performance');
+        const data = await response.json();
+        
+        // Update score circle
+        const score = data.score || 0;
+        const circumference = 2 * Math.PI * 70; // radius = 70
+        const offset = circumference - (score / 100) * circumference;
+        
+        const progressCircle = document.getElementById('score-progress');
+        progressCircle.style.strokeDashoffset = offset;
+        
+        // Color based on score
+        let color = '#ef4444'; // red
+        if (score >= 90) color = '#10b981'; // green
+        else if (score >= 70) color = '#4ade80'; // light green
+        else if (score >= 50) color = '#eab308'; // yellow
+        else if (score >= 30) color = '#f97316'; // orange
+        
+        progressCircle.style.stroke = color;
+        
+        // Update score text
+        document.getElementById('perf-score').textContent = score;
+        document.getElementById('perf-score').style.color = color;
+        
+        // Update rating
+        const stars = '⭐'.repeat(data.stars || 0) + '☆'.repeat(5 - (data.stars || 0));
+        document.getElementById('rating-stars').textContent = stars;
+        document.getElementById('rating-text').textContent = data.rating || 'Đang tính...';
+        document.getElementById('rating-text').style.color = color;
+        
+        // Update stats
+        if (data.stats) {
+            document.getElementById('stat-optimal').textContent = data.stats.optimalTime + '%';
+            document.getElementById('stat-temp').textContent = data.stats.avgTemp + '°C';
+            document.getElementById('stat-moisture').textContent = data.stats.avgMoisture + '%';
+            document.getElementById('stat-fan').textContent = data.stats.fanActivations;
+            document.getElementById('stat-pump').textContent = data.stats.pumpActivations;
+            document.getElementById('stat-readings').textContent = data.stats.totalReadings;
+        }
+        
+    } catch (error) {
+        console.error('Error fetching daily performance:', error);
+    }
 }
 
 // Start when DOM is ready

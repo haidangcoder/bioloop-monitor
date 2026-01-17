@@ -91,4 +91,126 @@ router.get('/history', (req, res) => {
   });
 });
 
+// GET /api/daily-performance - Calculate daily performance metrics
+router.get('/daily-performance', (req, res) => {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  
+  const sql = `
+    SELECT * FROM sensor_data 
+    WHERE timestamp > ? 
+    ORDER BY timestamp ASC
+  `;
+  
+  db.all(sql, [twentyFourHoursAgo], (err, rows) => {
+    if (err) {
+      console.error('[GET /daily-performance] Database error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!rows || rows.length === 0) {
+      return res.json({
+        score: 0,
+        rating: 'Chưa có dữ liệu',
+        stars: 0,
+        stats: {
+          optimalTime: 0,
+          avgTemp: 0,
+          avgMoisture: 0,
+          fanActivations: 0,
+          pumpActivations: 0,
+          totalReadings: 0
+        }
+      });
+    }
+    
+    // Calculate metrics
+    let optimalCount = 0;
+    let tempSum = 0;
+    let moistureSum = 0;
+    let fanActivations = 0;
+    let pumpActivations = 0;
+    let lastFanState = false;
+    let lastPumpState = false;
+    
+    rows.forEach(row => {
+      // Check if in optimal range
+      const tempOptimal = row.temperature >= 45 && row.temperature <= 55;
+      const moistureOptimal = row.moisture >= 50 && row.moisture <= 60;
+      if (tempOptimal && moistureOptimal) optimalCount++;
+      
+      tempSum += row.temperature;
+      moistureSum += row.moisture;
+      
+      // Count activations (state changes from OFF to ON)
+      if (row.fan && !lastFanState) fanActivations++;
+      if (row.pump_active && !lastPumpState) pumpActivations++;
+      lastFanState = row.fan;
+      lastPumpState = row.pump_active;
+    });
+    
+    const totalReadings = rows.length;
+    const optimalPercentage = (optimalCount / totalReadings) * 100;
+    const avgTemp = tempSum / totalReadings;
+    const avgMoisture = moistureSum / totalReadings;
+    
+    // Calculate score (0-100)
+    let score = 0;
+    
+    // Temperature score (40 points max)
+    if (avgTemp >= 45 && avgTemp <= 55) {
+      score += 40;
+    } else if (avgTemp >= 40 && avgTemp < 45) {
+      score += 20;
+    } else if (avgTemp > 55 && avgTemp <= 60) {
+      score += 30;
+    }
+    
+    // Moisture score (40 points max)
+    if (avgMoisture >= 50 && avgMoisture <= 60) {
+      score += 40;
+    } else if (avgMoisture >= 45 && avgMoisture < 50) {
+      score += 20;
+    } else if (avgMoisture > 60 && avgMoisture <= 65) {
+      score += 30;
+    }
+    
+    // Stability score (20 points max) - based on optimal time
+    score += (optimalPercentage / 100) * 20;
+    
+    // Rating
+    let rating = '';
+    let stars = 0;
+    if (score >= 90) {
+      rating = 'Xuất sắc';
+      stars = 5;
+    } else if (score >= 70) {
+      rating = 'Tốt';
+      stars = 4;
+    } else if (score >= 50) {
+      rating = 'Trung bình';
+      stars = 3;
+    } else if (score >= 30) {
+      rating = 'Cần cải thiện';
+      stars = 2;
+    } else {
+      rating = 'Yếu';
+      stars = 1;
+    }
+    
+    res.json({
+      score: Math.round(score),
+      rating,
+      stars,
+      stats: {
+        optimalTime: Math.round(optimalPercentage),
+        avgTemp: parseFloat(avgTemp.toFixed(1)),
+        avgMoisture: parseFloat(avgMoisture.toFixed(1)),
+        fanActivations,
+        pumpActivations,
+        totalReadings
+      }
+    });
+  });
+});
+
 module.exports = router;

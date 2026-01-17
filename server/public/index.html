@@ -303,6 +303,96 @@
             text-transform: uppercase;
         }
         
+        /* Performance Widget */
+        .performance-widget {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2d4a6f;
+        }
+        .performance-widget h2 {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        .performance-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+        .performance-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .score-circle {
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+        .score-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .score-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        .score-label {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        #score-progress {
+            transition: stroke-dashoffset 1s ease-out, stroke 0.3s;
+        }
+        .score-rating {
+            text-align: center;
+        }
+        .rating-stars {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .rating-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        .performance-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .stat-icon {
+            font-size: 28px;
+        }
+        .stat-content {
+            flex: 1;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        
         /* Tooltip styles */
         .info-icon {
             display: inline-block;
@@ -733,6 +823,75 @@
                     <div class="tooltip-title">Hoàn vốn sau 3 tháng</div>
                     Chi phí đầu tư ban đầu được hoàn vốn sau 3 tháng nhờ tiết kiệm nhân công và tăng năng suất.
                 </span>
+            </div>
+        </div>
+
+        <!-- Daily Performance Widget -->
+        <div class="performance-widget">
+            <h2>📈 Hiệu Suất Ủ Hàng Ngày (24h)</h2>
+            <div class="performance-content">
+                <div class="performance-score">
+                    <div class="score-circle" id="score-circle">
+                        <svg width="160" height="160">
+                            <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12"/>
+                            <circle id="score-progress" cx="80" cy="80" r="70" fill="none" stroke="#4ade80" stroke-width="12" 
+                                    stroke-dasharray="440" stroke-dashoffset="440" 
+                                    transform="rotate(-90 80 80)" stroke-linecap="round"/>
+                        </svg>
+                        <div class="score-text">
+                            <div class="score-value" id="perf-score">--</div>
+                            <div class="score-label">điểm</div>
+                        </div>
+                    </div>
+                    <div class="score-rating">
+                        <div class="rating-stars" id="rating-stars">⭐⭐⭐⭐⭐</div>
+                        <div class="rating-text" id="rating-text">Đang tính toán...</div>
+                    </div>
+                </div>
+                <div class="performance-stats">
+                    <div class="stat-item">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-optimal">--%</div>
+                            <div class="stat-label">Thời gian tối ưu</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">🌡️</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-temp">--°C</div>
+                            <div class="stat-label">Nhiệt độ TB</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">💧</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-moisture">--%</div>
+                            <div class="stat-label">Độ ẩm TB</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">🌀</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-fan">--</div>
+                            <div class="stat-label">Lần bật quạt</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">💦</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-pump">--</div>
+                            <div class="stat-label">Lần bật bơm</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-readings">--</div>
+                            <div class="stat-label">Số lần đo</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
