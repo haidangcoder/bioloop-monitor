@@ -405,8 +405,20 @@ async function fetchLatest() {
             // Update biological phase indicator with phase number and target temp
             updatePhaseIndicator(data.phase, data.temperature, data.target_temp);
             
-            // Update timestamp
-            document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
+            // Update timestamp - always use server time, not client time
+            // Parse UTC timestamp from server and convert to Vietnam time
+            const serverTime = new Date(data.timestamp);
+            const vnTimeString = serverTime.toLocaleString('vi-VN', {
+                timeZone: 'Asia/Ho_Chi_Minh',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('last-update').textContent = vnTimeString;
         }
     } catch (error) {
         console.error('Error fetching latest data:', error);

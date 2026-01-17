@@ -42,6 +42,7 @@
 #include <HTTPClient.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <time.h>
 #include "control/control.h"  // Fuzzy logic control module
 
 // ============================================
@@ -189,6 +190,27 @@ void initWiFi() {
     Serial.println();
     Serial.println("[WIFI] Connected!");
     Serial.printf("[WIFI] IP Address: %s\n", WiFi.localIP().toString().c_str());
+    
+    // Sync time with NTP server (fix timestamp issue)
+    Serial.println("[NTP] Syncing time...");
+    configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");  // GMT+7 for Vietnam
+    
+    // Wait for time sync (max 5 seconds)
+    int ntpAttempts = 0;
+    while (time(nullptr) < 100000 && ntpAttempts < 10) {
+      delay(500);
+      Serial.print(".");
+      ntpAttempts++;
+    }
+    
+    if (time(nullptr) > 100000) {
+      Serial.println();
+      time_t now = time(nullptr);
+      Serial.printf("[NTP] Time synced: %s", ctime(&now));
+    } else {
+      Serial.println();
+      Serial.println("[NTP] Time sync failed - using default");
+    }
   } else {
     wifiConnected = false;
     Serial.println();
@@ -341,6 +363,35 @@ void setup() {
 // ============================================
 void loop() {
   unsigned long currentMillis = millis();
+  
+  // Auto-reconnect WiFi if disconnected
+  static unsigned long lastWiFiCheck = 0;
+  if (currentMillis - lastWiFiCheck >= 10000) {  // Check every 10 seconds
+    lastWiFiCheck = currentMillis;
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("[WIFI] Disconnected! Reconnecting...");
+      WiFi.disconnect();
+      WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+      
+      int attempts = 0;
+      while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+        delay(500);
+        Serial.print(".");
+        attempts++;
+      }
+      
+      if (WiFi.status() == WL_CONNECTED) {
+        wifiConnected = true;
+        Serial.println();
+        Serial.println("[WIFI] Reconnected!");
+        Serial.printf("[WIFI] IP: %s\n", WiFi.localIP().toString().c_str());
+      } else {
+        wifiConnected = false;
+        Serial.println();
+        Serial.println("[WIFI] Reconnection failed!");
+      }
+    }
+  }
   
   // Check demo override from server
   if (currentMillis - lastDemoCheck >= DEMO_CHECK_INTERVAL) {
