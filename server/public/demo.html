@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioLoop Demo - Fuzzy Logic Test Cases</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #4ade80;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        .cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .case-card {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid #2d4a6f;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .case-card:hover {
+            transform: translateY(-5px);
+            border-color: #4ade80;
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.3);
+        }
+        .case-card.active {
+            border-color: #4ade80;
+            background: linear-gradient(135deg, #1e5f3a 0%, #0f4427 100%);
+        }
+        .case-number {
+            display: inline-block;
+            background: #4ade80;
+            color: #0f2744;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .case-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .case-desc {
+            color: #94a3b8;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .case-params {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .param-label {
+            color: #94a3b8;
+        }
+        .param-value {
+            font-weight: bold;
+            color: #4ade80;
+        }
+        .case-response {
+            background: rgba(74, 222, 128, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #4ade80;
+        }
+        .response-title {
+            font-size: 12px;
+            color: #4ade80;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .response-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .btn-demo {
+            width: 100%;
+            padding: 12px;
+            background: #4ade80;
+            color: #0f2744;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .btn-demo:hover {
+            background: #22c55e;
+            transform: scale(1.02);
+        }
+        .btn-demo:active {
+            transform: scale(0.98);
+        }
+        .status-bar {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #2d4a6f;
+            text-align: center;
+        }
+        .status-message {
+            font-size: 18px;
+            color: #4ade80;
+            margin-bottom: 10px;
+        }
+        .status-detail {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .btn-dashboard {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: #3b82f6;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-dashboard:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+        .comparison {
+            background: rgba(239, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 3px solid #ef4444;
+        }
+        .comparison-title {
+            font-size: 11px;
+            color: #ef4444;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .comparison-text {
+            font-size: 13px;
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 BioLoop Demo - Fuzzy Logic Test Cases</h1>
+        <p class="subtitle">Nhấn vào từng case để inject fake data và xem phản ứng của Fuzzy Logic</p>
+        
+        <div class="cases">
+            <!-- Case 1: Critical -->
+            <div class="case-card" id="case1" onclick="runCase(1)">
+                <span class="case-number">CASE 1</span>
+                <div class="case-title">🔥 CRITICAL - Nóng + Khô</div>
+                <div class="case-desc">
+                    Tình huống nguy hiểm nhất: Nhiệt độ quá cao + Độ ẩm quá thấp.
+                    Vi sinh vật có nguy cơ chết do bay hơi nhanh.
+                </div>
+                
+                <div class="case-params">
+                    <div class="param-row">
+                        <span class="param-label">🌡️ Nhiệt độ:</span>
+                        <span class="param-value">58°C (Quá nóng!)</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">💧 Độ ẩm:</span>
+                        <span class="param-value">35% (Quá khô!)</span>
+                    </div>
+                </div>
+                
+                <div class="case-response">
+                    <div class="response-title">✅ Phản ứng Fuzzy Logic:</div>
+                    <div class="response-item">
+                        <span>Quạt:</span>
+                        <span style="color: #fff; font-weight: bold;">255 PWM (100%)</span>
+                    </div>
+                    <div class="response-item">
+                        <span>Bơm:</span>
+                        <span style="color: #fff; font-weight: bold;">BẬT (Khẩn cấp)</span>
+                    </div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="comparison-title">❌ Hard Threshold:</div>
+                    <div class="comparison-text">Chỉ bật quạt HOẶC bơm, không phối hợp</div>
+                </div>
+                
+                <button class="btn-demo">Chạy Case 1</button>
+            </div>
+            
+            <!-- Case 2: Optimal -->
+            <div class="case-card" id="case2" onclick="runCase(2)">
+                <span class="case-number">CASE 2</span>
+                <div class="case-title">✅ OPTIMAL - Điều kiện lý tưởng</div>
+                <div class="case-desc">
+                    Nhiệt độ và độ ẩm trong vùng tối ưu.
+                    Hệ thống chỉ cần duy trì, không cần can thiệp mạnh.
+                </div>
+                
+                <div class="case-params">
+                    <div class="param-row">
+                        <span class="param-label">🌡️ Nhiệt độ:</span>
+                        <span class="param-value">52°C (Lý tưởng)</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">💧 Độ ẩm:</span>
+                        <span class="param-value">55% (Lý tưởng)</span>
+                    </div>
+                </div>
+                
+                <div class="case-response">
+                    <div class="response-title">✅ Phản ứng Fuzzy Logic:</div>
+                    <div class="response-item">
+                        <span>Quạt:</span>
+                        <span style="color: #fff; font-weight: bold;">90 PWM (35%)</span>
+                    </div>
+                    <div class="response-item">
+                        <span>Bơm:</span>
+                        <span style="color: #fff; font-weight: bold;">TẮT (Không cần)</span>
+                    </div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="comparison-title">❌ Hard Threshold:</div>
+                    <div class="comparison-text">Bật/tắt liên tục (oscillation)</div>
+                </div>
+                
+                <button class="btn-demo">Chạy Case 2</button>
+            </div>
+            
+            <!-- Case 3: Recovery -->
+            <div class="case-card" id="case3" onclick="runCase(3)">
+                <span class="case-number">CASE 3</span>
+                <div class="case-title">❄️ RECOVERY - Lạnh + Khô</div>
+                <div class="case-desc">
+                    Nhiệt độ thấp + Độ ẩm thấp. Cần tăng độ ẩm để kích hoạt vi sinh vật,
+                    KHÔNG làm mát thêm.
+                </div>
+                
+                <div class="case-params">
+                    <div class="param-row">
+                        <span class="param-label">🌡️ Nhiệt độ:</span>
+                        <span class="param-value">35°C (Quá lạnh)</span>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">💧 Độ ẩm:</span>
+                        <span class="param-value">30% (Quá khô)</span>
+                    </div>
+                </div>
+                
+                <div class="case-response">
+                    <div class="response-title">✅ Phản ứng Fuzzy Logic:</div>
+                    <div class="response-item">
+                        <span>Quạt:</span>
+                        <span style="color: #fff; font-weight: bold;">10 PWM (4%)</span>
+                    </div>
+                    <div class="response-item">
+                        <span>Bơm:</span>
+                        <span style="color: #fff; font-weight: bold;">BẬT (Phục hồi)</span>
+                    </div>
+                </div>
+                
+                <div class="comparison">
+                    <div class="comparison-title">❌ Hard Threshold:</div>
+                    <div class="comparison-text">Có thể vẫn làm mát (sai lầm!)</div>
+                </div>
+                
+                <button class="btn-demo">Chạy Case 3</button>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-message" id="status-message">
+                Chọn một case để bắt đầu demo
+            </div>
+            <div class="status-detail" id="status-detail">
+                Dữ liệu sẽ được inject vào database và hiển thị trên dashboard
+            </div>
+            <a href="/" class="btn-dashboard" target="_blank">📊 Mở Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        let currentCase = null;
+        
+        async function runCase(caseNum) {
+            // Remove active class from all cards
+            document.querySelectorAll('.case-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // Add active class to selected card
+            document.getElementById(`case${caseNum}`).classList.add('active');
+            currentCase = caseNum;
+            
+            // Define test data for each case
+            const testData = {
+                1: { // Critical
+                    temperature: 58.0,
+                    moisture: 35.0,
+                    temp_error: 8.0,
+                    fan_pwm: 255,
+                    pump: true,
+                    phase: 2,
+                    target_temp: 50.0
+                },
+                2: { // Optimal
+                    temperature: 52.0,
+                    moisture: 55.0,
+                    temp_error: 2.0,
+                    fan_pwm: 90,
+                    pump: false,
+                    phase: 2,
+                    target_temp: 50.0
+                },
+                3: { // Recovery
+                    temperature: 35.0,
+                    moisture: 30.0,
+                    temp_error: -15.0,
+                    fan_pwm: 10,
+                    pump: true,
+                    phase: 1,
+                    target_temp: 35.0
+                }
+            };
+            
+            const data = testData[caseNum];
+            
+            // Update status
+            document.getElementById('status-message').textContent = `⏳ Đang inject Case ${caseNum}...`;
+            document.getElementById('status-detail').textContent = `Nhiệt độ: ${data.temperature}°C, Độ ẩm: ${data.moisture}%`;
+            
+            try {
+                // Send data to server
+                const response = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('status-message').textContent = `✅ Case ${caseNum} đã inject thành công!`;
+                    document.getElementById('status-detail').textContent = `Mở Dashboard để xem phản ứng Fuzzy Logic. ID: ${result.id}`;
+                } else {
+                    document.getElementById('status-message').textContent = `❌ Lỗi: ${result.error}`;
+                    document.getElementById('status-detail').textContent = 'Vui lòng thử lại';
+                }
+            } catch (error) {
+                document.getElementById('status-message').textContent = `❌ Lỗi kết nối: ${error.message}`;
+                document.getElementById('status-detail').textContent = 'Kiểm tra server và thử lại';
+            }
+        }
+    </script>
+</body>
+</html>
