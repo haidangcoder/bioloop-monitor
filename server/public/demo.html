@@ -319,9 +319,10 @@
                 Chọn một case để bắt đầu demo
             </div>
             <div class="status-detail" id="status-detail">
-                Dữ liệu sẽ được inject vào database và hiển thị trên dashboard
+                ESP32 sẽ điều khiển bơm/quạt thật theo case được chọn
             </div>
             <a href="/" class="btn-dashboard" target="_blank">📊 Mở Dashboard</a>
+            <button class="btn-dashboard" onclick="clearDemo()" style="background: #ef4444; margin-left: 10px;">🛑 Tắt Demo Mode</button>
         </div>
     </div>
     
@@ -341,43 +342,31 @@
             // Define test data for each case
             const testData = {
                 1: { // Critical
-                    temperature: 58.0,
-                    moisture: 35.0,
-                    temp_error: 8.0,
+                    case_num: 1,
                     fan_pwm: 255,
-                    pump: true,
-                    phase: 2,
-                    target_temp: 50.0
+                    pump_active: true
                 },
                 2: { // Optimal
-                    temperature: 52.0,
-                    moisture: 55.0,
-                    temp_error: 2.0,
+                    case_num: 2,
                     fan_pwm: 90,
-                    pump: false,
-                    phase: 2,
-                    target_temp: 50.0
+                    pump_active: false
                 },
                 3: { // Recovery
-                    temperature: 35.0,
-                    moisture: 30.0,
-                    temp_error: -15.0,
+                    case_num: 3,
                     fan_pwm: 10,
-                    pump: true,
-                    phase: 1,
-                    target_temp: 35.0
+                    pump_active: true
                 }
             };
             
             const data = testData[caseNum];
             
             // Update status
-            document.getElementById('status-message').textContent = `⏳ Đang inject Case ${caseNum}...`;
-            document.getElementById('status-detail').textContent = `Nhiệt độ: ${data.temperature}°C, Độ ẩm: ${data.moisture}%`;
+            document.getElementById('status-message').textContent = `⏳ Đang kích hoạt Case ${caseNum}...`;
+            document.getElementById('status-detail').textContent = `Quạt: ${data.fan_pwm} PWM, Bơm: ${data.pump_active ? 'BẬT' : 'TẮT'}`;
             
             try {
-                // Send data to server
-                const response = await fetch('/api/data', {
+                // Send override command to server
+                const response = await fetch('/api/demo/override', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -388,8 +377,8 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    document.getElementById('status-message').textContent = `✅ Case ${caseNum} đã inject thành công!`;
-                    document.getElementById('status-detail').textContent = `Mở Dashboard để xem phản ứng Fuzzy Logic. ID: ${result.id}`;
+                    document.getElementById('status-message').textContent = `✅ Case ${caseNum} đang chạy trên ESP32!`;
+                    document.getElementById('status-detail').textContent = `Bơm và quạt thật sự đang hoạt động theo Case ${caseNum}. Tự động tắt sau 5 phút.`;
                 } else {
                     document.getElementById('status-message').textContent = `❌ Lỗi: ${result.error}`;
                     document.getElementById('status-detail').textContent = 'Vui lòng thử lại';
@@ -397,6 +386,26 @@
             } catch (error) {
                 document.getElementById('status-message').textContent = `❌ Lỗi kết nối: ${error.message}`;
                 document.getElementById('status-detail').textContent = 'Kiểm tra server và thử lại';
+            }
+        }
+        
+        async function clearDemo() {
+            try {
+                const response = await fetch('/api/demo/clear', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('status-message').textContent = '✅ Đã tắt demo mode';
+                    document.getElementById('status-detail').textContent = 'Hệ thống quay về chế độ tự động';
+                    document.querySelectorAll('.case-card').forEach(card => {
+                        card.classList.remove('active');
+                    });
+                }
+            } catch (error) {
+                console.error('Error clearing demo:', error);
             }
         }
     </script>

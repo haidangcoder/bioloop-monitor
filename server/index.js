@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dataRoutes = require('./routes/data');
+const demoRoutes = require('./routes/demo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 app.use('/api/data', dataRoutes);
+app.use('/api/demo', demoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

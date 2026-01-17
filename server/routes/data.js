@@ -8,7 +8,7 @@ router.post('/', (req, res) => {
   // Debug: Log received body
   console.log('[POST /api/data] Received body:', req.body);
   
-  const { temperature, moisture, temp_error, fan_pwm, pump } = req.body;
+  const { temperature, moisture, temp_error, fan_pwm, pump, phase, target_temp } = req.body;
   
   // Validate required fields
   if (temperature === undefined || moisture === undefined || 
@@ -31,11 +31,14 @@ router.post('/', (req, res) => {
   
   // Insert into database (sqlite3 async API)
   const sql = `
-    INSERT INTO sensor_data (temperature, moisture, temp_error, fan_pwm, pump_active)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO sensor_data (temperature, moisture, temp_error, fan_pwm, pump_active, phase, target_temp)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   
-  db.run(sql, [temperature, moisture, temp_error, fan_pwm, pump ? 1 : 0], function(err) {
+  const phaseValue = phase !== undefined ? phase : 1;
+  const targetTempValue = target_temp !== undefined ? target_temp : 35.0;
+  
+  db.run(sql, [temperature, moisture, temp_error, fan_pwm, pump ? 1 : 0, phaseValue, targetTempValue], function(err) {
     if (err) {
       console.error('[POST /api/data] Database error:', err.message);
       return res.status(500).json({ 

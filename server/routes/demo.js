@@ -1,0 +1,106 @@
+// Demo mode API - Override control for testing
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
+
+// POST /api/demo/override - Set override mode
+router.post('/override', (req, res) => {
+  console.log('[DEMO] Override request:', req.body);
+  
+  const { case_num, fan_pwm, pump_active } = req.body;
+  
+  if (!case_num || fan_pwm === undefined || pump_active === undefined) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Missing required fields' 
+    });
+  }
+  
+  // Store override command in database
+  const sql = `
+    INSERT INTO demo_override (case_num, fan_pwm, pump_active, active)
+    VALUES (?, ?, ?, 1)
+  `;
+  
+  db.run(sql, [case_num, fan_pwm, pump_active ? 1 : 0], function(err) {
+    if (err) {
+      console.error('[DEMO] Database error:', err.message);
+      return res.status(500).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
+    
+    console.log(`[DEMO] Override set: Case ${case_num}, Fan=${fan_pwm}, Pump=${pump_active}`);
+    
+    res.json({ 
+      success: true, 
+      id: this.lastID,
+      message: `Demo Case ${case_num} activated`
+    });
+  });
+});
+
+// GET /api/demo/override - Get current override mode
+router.get('/override', (req, res) => {
+  const sql = `
+    SELECT * FROM demo_override 
+    WHERE active = 1 
+    ORDER BY timestamp DESC 
+    LIMIT 1
+  `;
+  
+  db.get(sql, [], (err, row) => {
+    if (err) {
+      console.error('[DEMO] Database error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!row) {
+      return res.json({ active: false });
+    }
+    
+    // Check if override is still valid (within 5 minutes)
+    const overrideTime = new Date(row.timestamp);
+    const now = new Date();
+    const diffMinutes = (now - overrideTime) / 1000 / 60;
+    
+    if (diffMinutes > 5) {
+      // Expire old override
+      db.run('UPDATE demo_override SET active = 0 WHERE id = ?', [row.id]);
+      return res.json({ active: false });
+    }
+    
+    res.json({
+      active: true,
+      case_num: row.case_num,
+      fan_pwm: row.fan_pwm,
+      pump_active: row.pump_active === 1,
+      timestamp: row.timestamp
+    });
+  });
+});
+
+// POST /api/demo/clear - Clear override mode
+router.post('/clear', (req, res) => {
+  const sql = 'UPDATE demo_override SET active = 0';
+  
+  db.run(sql, [], function(err) {
+    if (err) {
+      console.error('[DEMO] Database error:', err.message);
+      return res.status(500).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
+    
+    console.log('[DEMO] Override cleared');
+    
+    res.json({ 
+      success: true,
+      message: 'Demo mode cleared, returning to normal operation'
+    });
+  });
+});
+
+module.exports = router;
