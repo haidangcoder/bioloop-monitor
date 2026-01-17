@@ -431,7 +431,11 @@ async function fetchHistory() {
         // Prepare data for charts
         const labels = data.map(d => {
             const date = new Date(d.timestamp);
-            return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('vi-VN', { 
+                timeZone: 'Asia/Ho_Chi_Minh',
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
         });
         
         // Use REAL data (no clamping)
@@ -474,12 +478,11 @@ function updateTable(data) {
     
     data.forEach(row => {
         const tr = document.createElement('tr');
-        // Convert UTC to Vietnam time (GMT+7)
+        // Convert to Vietnam time using proper timezone
         const date = new Date(row.timestamp);
-        const vnTime = new Date(date.getTime() + (7 * 60 * 60 * 1000));
         
         tr.innerHTML = `
-            <td>${vnTime.toLocaleString('vi-VN')}</td>
+            <td>${date.toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'})}</td>
             <td>${row.temperature.toFixed(1)}</td>
             <td>${row.moisture.toFixed(1)}</td>
             <td>${row.temp_error.toFixed(2)}</td>
