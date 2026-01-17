@@ -8,15 +8,51 @@ let tempChart, moistureChart, fanChart;
 let stabilityHistory = [];
 const STABILITY_WINDOW = 20; // Track last 20 readings
 
-// Biological Phase Detection based on temperature
-function getBiologicalPhase(temperature) {
+// Biological Phase Detection based on phase number from ESP32
+function getBiologicalPhase(phaseNum, temperature) {
+    // Use phase number from ESP32 if available
+    if (phaseNum === 1) {
+        return {
+            name: 'MESOPHILIC',
+            nameVi: 'Pha Ấm (Mesophilic)',
+            description: 'Vi sinh vật ưa ấm phân hủy chất hữu cơ, giai đoạn khởi đầu (20-40°C)',
+            color: '#3b82f6',
+            segment: 'meso',
+            targetTemp: 35,
+            targetMoisture: '50-60%'
+        };
+    } else if (phaseNum === 2) {
+        return {
+            name: 'THERMOPHILIC',
+            nameVi: 'Pha Nhiệt Cao (Thermophilic)',
+            description: 'Vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh và cỏ dại (45-65°C)',
+            color: '#f97316',
+            segment: 'thermo',
+            targetTemp: 52.5,
+            targetMoisture: '50-60%'
+        };
+    } else if (phaseNum === 3) {
+        return {
+            name: 'MATURATION',
+            nameVi: 'Pha Ổn Định (Maturation)',
+            description: 'Compost đang ổn định và trưởng thành, sẵn sàng sử dụng (<40°C)',
+            color: '#22c55e',
+            segment: 'mature',
+            targetTemp: 35,
+            targetMoisture: '40-50%'
+        };
+    }
+    
+    // Fallback: detect by temperature if phase not provided
     if (temperature >= 45 && temperature <= 65) {
         return {
             name: 'THERMOPHILIC',
             nameVi: 'Pha Nhiệt Cao',
             description: 'Vi sinh vật ưa nhiệt hoạt động mạnh, tiêu diệt mầm bệnh và cỏ dại',
             color: '#f97316',
-            segment: 'thermo'
+            segment: 'thermo',
+            targetTemp: 52.5,
+            targetMoisture: '50-60%'
         };
     } else if (temperature >= 20 && temperature < 45) {
         return {
@@ -24,23 +60,19 @@ function getBiologicalPhase(temperature) {
             nameVi: 'Pha Ấm',
             description: 'Vi sinh vật ưa ấm phân hủy chất hữu cơ, giai đoạn khởi đầu',
             color: '#3b82f6',
-            segment: 'meso'
+            segment: 'meso',
+            targetTemp: 35,
+            targetMoisture: '50-60%'
         };
-    } else if (temperature < 20) {
+    } else {
         return {
             name: 'MATURATION',
             nameVi: 'Pha Ổn Định',
             description: 'Compost đang ổn định và trưởng thành, sẵn sàng sử dụng',
             color: '#22c55e',
-            segment: 'mature'
-        };
-    } else {
-        return {
-            name: 'COOLING',
-            nameVi: 'Đang Làm Mát',
-            description: 'Nhiệt độ quá cao, hệ thống đang làm mát để bảo vệ vi sinh vật',
-            color: '#ef4444',
-            segment: 'thermo'
+            segment: 'mature',
+            targetTemp: 35,
+            targetMoisture: '40-50%'
         };
     }
 }
@@ -70,19 +102,49 @@ function getStabilityLabel(index) {
     return { text: 'Cảnh báo - Kiểm tra hệ thống', color: '#ef4444' };
 }
 
+// Update chart target lines based on current phase
+function updateChartTargets(phaseNum, targetTemp) {
+    const phase = getBiologicalPhase(phaseNum);
+    
+    // Update temperature chart target line
+    if (tempChart && tempChart.options.plugins.annotation) {
+        tempChart.options.plugins.annotation.annotations.optimalLine.yMin = targetTemp;
+        tempChart.options.plugins.annotation.annotations.optimalLine.yMax = targetTemp;
+        tempChart.options.plugins.annotation.annotations.optimalLine.label.content = `Mục tiêu: ${targetTemp}°C`;
+        tempChart.update('none');
+    }
+    
+    // Update moisture chart target line based on phase
+    let moistureTarget = 55;  // Default
+    if (phaseNum === 3) moistureTarget = 45;  // Maturation phase: lower moisture
+    
+    if (moistureChart && moistureChart.options.plugins.annotation) {
+        moistureChart.options.plugins.annotation.annotations.optimalLine.yMin = moistureTarget;
+        moistureChart.options.plugins.annotation.annotations.optimalLine.yMax = moistureTarget;
+        moistureChart.options.plugins.annotation.annotations.optimalLine.label.content = `Mục tiêu: ${moistureTarget}%`;
+        moistureChart.update('none');
+    }
+}
+
 // Update Biological Phase UI
-function updatePhaseIndicator(temperature) {
-    const phase = getBiologicalPhase(temperature);
+function updatePhaseIndicator(phaseNum, temperature, targetTemp) {
+    const phase = getBiologicalPhase(phaseNum, temperature);
     
     document.getElementById('phase-name').textContent = phase.nameVi;
     document.getElementById('phase-name').style.color = phase.color;
-    document.getElementById('phase-description').textContent = phase.description;
+    
+    // Update description with target info
+    const targetInfo = targetTemp ? ` | Mục tiêu: ${targetTemp}°C, ${phase.targetMoisture}` : '';
+    document.getElementById('phase-description').textContent = phase.description + targetInfo;
     
     // Update phase bar segments
     ['meso', 'thermo', 'mature'].forEach(seg => {
         const el = document.getElementById(`seg-${seg}`);
         el.classList.toggle('inactive', seg !== phase.segment);
     });
+    
+    // Update chart target lines
+    updateChartTargets(phaseNum, targetTemp);
 }
 
 // Update Stability Gauge
@@ -295,8 +357,8 @@ async function fetchLatest() {
             pumpElement.textContent = data.pump_active ? 'BẬT' : 'TẮT';
             pumpElement.className = data.pump_active ? 'value pump-on' : 'value pump-off';
             
-            // Update biological phase indicator
-            updatePhaseIndicator(data.temperature);
+            // Update biological phase indicator with phase number and target temp
+            updatePhaseIndicator(data.phase, data.temperature, data.target_temp);
             
             // Update timestamp
             document.getElementById('last-update').textContent = new Date(data.timestamp).toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
