@@ -390,6 +390,23 @@
             const data = caseData[caseNum];
             demoStartTime = Date.now();
             
+            // Send override command to server for ESP32
+            fetch('/api/demo/override', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    case_num: caseNum,
+                    fan_pwm: data.start_fan,
+                    pump_active: data.start_pump
+                })
+            }).then(function(response) {
+                return response.json();
+            }).then(function(result) {
+                console.log('Override command sent:', result);
+            }).catch(function(error) {
+                console.error('Error sending override:', error);
+            });
+            
             // Update status
             document.getElementById('status-message').textContent = `🎬 Case ${caseNum} đang chạy - Quan sát phản ứng Fuzzy Logic`;
             document.getElementById('status-detail').textContent = `Hệ thống đang điều chỉnh từ từ về trạng thái lý tưởng (30 giây)`;
@@ -467,6 +484,18 @@
             // Reset variables
             currentCase = null;
             demoStartTime = null;
+            
+            // Clear override on server
+            fetch('/api/demo/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(function(response) {
+                return response.json();
+            }).then(function(result) {
+                console.log('Override cleared:', result);
+            }).catch(function(error) {
+                console.error('Error clearing override:', error);
+            });
             
             // Update UI
             document.getElementById('status-message').textContent = '✅ Đã dừng demo';

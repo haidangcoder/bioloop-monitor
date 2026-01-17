@@ -49,7 +49,7 @@
 // ============================================
 const char* WIFI_SSID = "Quoc Viet";      // Thay bằng tên WiFi của bạn
 const char* WIFI_PASSWORD = "Vy@020514";  // Thay bằng mật khẩu WiFi
-const char* SERVER_URL = "http://192.168.1.248:3000/api/data";  // IP máy tính của bạn
+const char* SERVER_URL = "https://bioloop-monitor.onrender.com/api/data";  // Render.com URL
 
 // ============================================
 // CONTROL MODE SELECTION
@@ -58,19 +58,22 @@ const char* SERVER_URL = "http://192.168.1.248:3000/api/data";  // IP máy tính
 // Set to false for HARD THRESHOLD CONTROL (baseline comparison only)
 #define USE_FUZZY_CONTROL true
 
+// Pump control - Set to false if moisture sensor is unstable
+#define ENABLE_PUMP_CONTROL true  // Enabled - testing with GPIO 35xed
+
 // ============================================
 // PIN DEFINITIONS
 // ============================================
 #define PIN_TEMP_SENSOR   21    // DS18B20 OneWire data pin
-#define PIN_MOISTURE      34    // Capacitive moisture sensor (ADC)
+#define PIN_MOISTURE      35    // Capacitive moisture sensor (ADC) - Changed from 34 to 35
 #define PIN_PUMP_RELAY    26    // Water pump relay control
 #define PIN_FAN_RELAY     27    // Ventilation fan relay control
 
 // ============================================
 // FUZZY CONTROL PARAMETERS
 // ============================================
-// Target temperature midpoint for error calculation
-#define TARGET_TEMP_MIDPOINT 52.5f  // °C (center of 50-55°C range)
+#define TARGET_TEMP_MIDPOINT  50.0f   // Target temperature (°C)
+#define TARGET_MOISTURE       55.0f   // Target moisture (%)
 
 // Fan relay activation threshold (fuzzy PWM → binary relay)
 // Fan ON if fanPwm > this threshold
@@ -91,12 +94,20 @@ const char* SERVER_URL = "http://192.168.1.248:3000/api/data";  // IP máy tính
 #define MOISTURE_AIR_VALUE    3500    // Sensor in air (dry)
 #define MOISTURE_WATER_VALUE  1500    // Sensor in water (wet)
 
+// Moving average filter for moisture sensor
+#define MOISTURE_SAMPLES 5
+int moistureReadings[MOISTURE_SAMPLES];
+int moistureIndex = 0;
+int moistureTotal = 0;
+bool moistureFilterInitialized = false;
+
 // ============================================
 // TIMING INTERVALS
 // ============================================
 #define SENSOR_READ_INTERVAL  2000    // Read sensors every 2 seconds
 #define LOG_INTERVAL          5000    // Log to Serial every 5 seconds
 #define HTTP_SEND_INTERVAL    5000    // Send to server every 5 seconds
+#define DEMO_CHECK_INTERVAL   3000    // Check demo override every 3 seconds
 
 // ============================================
 // GLOBAL VARIABLES
@@ -123,6 +134,12 @@ uint8_t lastFanPwm = 0;
 unsigned long lastSensorRead = 0;
 unsigned long lastLogTime = 0;
 unsigned long lastHttpSend = 0;
+unsigned long lastDemoCheck = 0;
+
+// Demo override state
+bool demoOverrideActive = false;
+uint8_t demoFanPwm = 0;
+bool demoPumpActive = false;
 
 // WiFi status
 bool wifiConnected = false;
@@ -135,6 +152,7 @@ void initActuators();
 void readSensors();
 float readTemperature();
 float readMoisture();
+int detectPhase();
 void runFuzzyControl();
 void setPump(bool state);
 void setFan(bool state);
@@ -142,6 +160,7 @@ void logStatus();
 String buildJsonPayload();
 void initWiFi();
 void sendDataToServer();
+void checkDemoOverride();
 
 // Baseline functions (disabled when USE_FUZZY_CONTROL is true)
 #if !USE_FUZZY_CONTROL
@@ -205,6 +224,76 @@ void sendDataToServer() {
 }
 
 // ============================================
+// CHECK DEMO OVERRIDE FROM SERVER
+// ============================================
+void checkDemoOverride() {
+  if (!wifiConnected || WiFi.status() != WL_CONNECTED) {
+    // If WiFi lost, disable demo override for safety
+    if (demoOverrideActive) {
+      Serial.println("[DEMO] WiFi lost - disabling override");
+      demoOverrideActive = false;
+    }
+    return;
+  }
+  
+  HTTPClient http;
+  String demoUrl = String(SERVER_URL);
+  demoUrl.replace("/api/data", "/api/demo/status");
+  
+  http.begin(demoUrl);
+  http.setTimeout(2000);  // 2 second timeout
+  
+  int httpCode = http.GET();
+  
+  if (httpCode == 200) {
+    String response = http.getString();
+    
+    // Parse JSON manually (simple format: {"active":1,"fan":255,"pump":1})
+    int activePos = response.indexOf("\"active\":");
+    if (activePos > 0) {
+      int activeValue = response.substring(activePos + 9, activePos + 10).toInt();
+      
+      if (activeValue == 1) {
+        // Demo override is active
+        int fanPos = response.indexOf("\"fan\":");
+        int pumpPos = response.indexOf("\"pump\":");
+        
+        if (fanPos > 0 && pumpPos > 0) {
+          // Extract fan PWM value
+          int fanStart = fanPos + 6;
+          int fanEnd = response.indexOf(",", fanStart);
+          if (fanEnd < 0) fanEnd = response.indexOf("}", fanStart);
+          demoFanPwm = response.substring(fanStart, fanEnd).toInt();
+          
+          // Extract pump value
+          int pumpStart = pumpPos + 7;
+          int pumpEnd = response.indexOf("}", pumpStart);
+          demoPumpActive = (response.substring(pumpStart, pumpEnd).toInt() == 1);
+          
+          if (!demoOverrideActive) {
+            Serial.println("[DEMO] ⚠️  OVERRIDE ACTIVATED");
+            Serial.printf("[DEMO] Fan PWM: %d, Pump: %s\n", 
+                         demoFanPwm, demoPumpActive ? "ON" : "OFF");
+          }
+          demoOverrideActive = true;
+        }
+      } else {
+        // Demo override is not active
+        if (demoOverrideActive) {
+          Serial.println("[DEMO] ✅ Override cleared - returning to normal control");
+          demoOverrideActive = false;
+        }
+      }
+    }
+  } else if (httpCode > 0) {
+    Serial.printf("[DEMO] HTTP error: %d\n", httpCode);
+  }
+  // Silently ignore connection errors to avoid spam
+  
+  http.end();
+}
+
+// ============================================
 // SETUP
 // ============================================
 void setup() {
@@ -245,17 +334,31 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
   
+  // Check demo override from server
+  if (currentMillis - lastDemoCheck >= DEMO_CHECK_INTERVAL) {
+    lastDemoCheck = currentMillis;
+    checkDemoOverride();
+  }
+  
   // Read sensors at regular intervals
   if (currentMillis - lastSensorRead >= SENSOR_READ_INTERVAL) {
     lastSensorRead = currentMillis;
     readSensors();
     
     // Execute control logic after sensor reading
+    // ONLY if demo override is NOT active
+    if (!demoOverrideActive) {
 #if USE_FUZZY_CONTROL
-    runFuzzyControl();
+      runFuzzyControl();
 #else
-    runHardThresholdControl();
+      runHardThresholdControl();
 #endif
+    } else {
+      // Demo override active - apply demo commands
+      lastFanPwm = demoFanPwm;
+      setFan(demoFanPwm > FAN_PWM_THRESHOLD);
+      setPump(demoPumpActive);
+    }
   }
   
   // Log status at regular intervals
@@ -315,6 +418,22 @@ void initActuators() {
 }
 
 // ============================================
+// DETECT COMPOSTING PHASE (For UI Display Only)
+// ============================================
+// Detects current phase based on temperature for dashboard display
+// Does NOT affect control logic - ESP32 always uses 50°C target
+// ============================================
+int detectPhase() {
+  if (currentTemperature >= 45 && currentTemperature <= 65) {
+    return 2;  // Thermophilic
+  } else if (currentTemperature >= 20 && currentTemperature < 45) {
+    return 1;  // Mesophilic
+  } else {
+    return 3;  // Maturation
+  }
+}
+
+// ============================================
 // SENSOR READING
 // ============================================
 void readSensors() {
@@ -344,14 +463,39 @@ float readTemperature() {
 }
 
 float readMoisture() {
-  // Read ADC value (12-bit: 0-4095)
-  int rawAdc = analogRead(PIN_MOISTURE);
+  // Read ADC value multiple times and average
+  int rawAdc = 0;
+  const int numReadings = 10;
   
-  // Debug: Print raw ADC value
-  Serial.printf("[DEBUG] Moisture ADC raw: %d\n", rawAdc);
+  for (int i = 0; i < numReadings; i++) {
+    rawAdc += analogRead(PIN_MOISTURE);
+    delay(10);
+  }
+  rawAdc = rawAdc / numReadings;
+  
+  // Apply moving average filter
+  if (!moistureFilterInitialized) {
+    // Initialize filter with first reading
+    for (int i = 0; i < MOISTURE_SAMPLES; i++) {
+      moistureReadings[i] = rawAdc;
+    }
+    moistureTotal = rawAdc * MOISTURE_SAMPLES;
+    moistureFilterInitialized = true;
+  } else {
+    // Update moving average
+    moistureTotal = moistureTotal - moistureReadings[moistureIndex];
+    moistureReadings[moistureIndex] = rawAdc;
+    moistureTotal = moistureTotal + moistureReadings[moistureIndex];
+    moistureIndex = (moistureIndex + 1) % MOISTURE_SAMPLES;
+  }
+  
+  int filteredAdc = moistureTotal / MOISTURE_SAMPLES;
+  
+  // Debug: Print raw and filtered ADC values
+  Serial.printf("[DEBUG] Moisture ADC raw: %d, filtered: %d\n", rawAdc, filteredAdc);
   
   // Validate ADC reading
-  if (rawAdc < 100 || rawAdc > 4000) {
+  if (filteredAdc < 100 || filteredAdc > 4000) {
     moistureValid = false;
     Serial.printf("[DEBUG] Moisture INVALID: ADC out of range\n");
     return currentMoisture;  // Return last valid reading
@@ -360,7 +504,7 @@ float readMoisture() {
   // Convert to percentage (CORRECTED FORMULA)
   // Capacitive sensor: HIGH ADC = DRY, LOW ADC = WET
   // moisture% = (AIR_VALUE - rawAdc) / (AIR_VALUE - WATER_VALUE) * 100
-  float moisture = ((float)(MOISTURE_AIR_VALUE - rawAdc) / 
+  float moisture = ((float)(MOISTURE_AIR_VALUE - filteredAdc) / 
                     (float)(MOISTURE_AIR_VALUE - MOISTURE_WATER_VALUE)) * 100.0f;
   
   // Debug: Print calculated moisture
@@ -426,12 +570,20 @@ void runFuzzyControl() {
                   newFanState ? "ON" : "OFF", output.fanPwm, FAN_PWM_THRESHOLD);
   }
   
-  // Pump: Use fuzzy boolean directly
+  // Pump: Use fuzzy boolean directly (if enabled)
+  #if ENABLE_PUMP_CONTROL
   if (output.pumpActive != pumpActive) {
     setPump(output.pumpActive);
     Serial.printf("[FUZZY] Pump %s (moisture=%.1f%%)\n", 
                   output.pumpActive ? "ON" : "OFF", currentMoisture);
   }
+  #else
+  // Pump control disabled - keep OFF
+  if (pumpActive) {
+    setPump(false);
+    Serial.println("[FUZZY] Pump control DISABLED (sensor unstable)");
+  }
+  #endif
 }
 
 // ============================================
@@ -470,6 +622,12 @@ void setFan(bool state) {
 // ============================================
 void logStatus() {
   Serial.println("----------------------------------------");
+  
+  // Show demo mode indicator
+  if (demoOverrideActive) {
+    Serial.println("[STATUS] ⚠️  DEMO MODE ACTIVE - Override from server");
+  }
+  
   Serial.printf("[STATUS] Temperature: %.1f°C %s\n", 
                 currentTemperature, tempValid ? "" : "(INVALID)");
   Serial.printf("[STATUS] Moisture: %.1f%% %s\n", 
@@ -491,6 +649,13 @@ void logStatus() {
 // ============================================
 String buildJsonPayload() {
   float tempError = currentTemperature - TARGET_TEMP_MIDPOINT;
+  int phase = detectPhase();  // Detect phase for UI display only
+  
+  // Calculate display target based on phase (for UI only)
+  float displayTarget = 50.0f;  // Default
+  if (phase == 1) displayTarget = 35.0f;      // Mesophilic
+  else if (phase == 2) displayTarget = 52.5f; // Thermophilic
+  else if (phase == 3) displayTarget = 35.0f; // Maturation
   
   String json = "{";
   json += "\"temperature\":" + String(currentTemperature, 1) + ",";
@@ -500,7 +665,9 @@ String buildJsonPayload() {
   json += "\"fan_pwm\":" + String(lastFanPwm) + ",";
 #endif
   json += "\"fan\":" + String(fanActive ? "true" : "false") + ",";
-  json += "\"pump\":" + String(pumpActive ? "true" : "false");
+  json += "\"pump\":" + String(pumpActive ? "true" : "false") + ",";
+  json += "\"phase\":" + String(phase) + ",";
+  json += "\"target_temp\":" + String(displayTarget, 1);
   json += "}";
   
   return json;

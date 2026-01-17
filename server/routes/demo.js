@@ -81,6 +81,45 @@ router.get('/override', (req, res) => {
   });
 });
 
+// GET /api/demo/status - Lightweight endpoint for ESP32 polling
+router.get('/status', (req, res) => {
+  const sql = `
+    SELECT case_num, fan_pwm, pump_active, timestamp 
+    FROM demo_override 
+    WHERE active = 1 
+    ORDER BY timestamp DESC 
+    LIMIT 1
+  `;
+  
+  db.get(sql, [], (err, row) => {
+    if (err) {
+      return res.status(500).json({ active: 0 });
+    }
+    
+    if (!row) {
+      return res.json({ active: 0 });
+    }
+    
+    // Check if override is still valid (within 5 minutes)
+    const overrideTime = new Date(row.timestamp);
+    const now = new Date();
+    const diffMinutes = (now - overrideTime) / 1000 / 60;
+    
+    if (diffMinutes > 5) {
+      // Expire old override
+      db.run('UPDATE demo_override SET active = 0 WHERE timestamp = ?', [row.timestamp]);
+      return res.json({ active: 0 });
+    }
+    
+    // Return minimal data for ESP32
+    res.json({
+      active: 1,
+      fan: row.fan_pwm,
+      pump: row.pump_active
+    });
+  });
+});
+
 // POST /api/demo/clear - Clear override mode
 router.post('/clear', (req, res) => {
   const sql = 'UPDATE demo_override SET active = 0';

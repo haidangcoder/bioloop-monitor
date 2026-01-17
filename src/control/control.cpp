@@ -22,6 +22,11 @@
 
 static Fuzzy* fuzzy = nullptr;
 
+// Pump state memory for hysteresis (prevent oscillation)
+static bool lastPumpState = false;
+static const float PUMP_ON_THRESHOLD = 35.0f;   // Turn ON when pumpLevel > 35%
+static const float PUMP_OFF_THRESHOLD = 25.0f;  // Turn OFF when pumpLevel < 25%
+
 // Utility: Clamp float to valid range
 static float clampf(float value, float minVal, float maxVal) {
     if (value < minVal) return minVal;
@@ -300,11 +305,20 @@ ControlOutput control_compute(const ControlInput& input) {
     
     // Get defuzzified pump output
     // Convert continuous pump level [0-100] to boolean activation
-    // Threshold at 30% provides hysteresis and prevents rapid switching
-    // This is superior to hard threshold because the fuzzy output itself
-    // is already smoothed by the inference process
+    // Use hysteresis to prevent rapid switching (oscillation)
     float pumpLevel = fuzzy->defuzzify(2);
-    output.pumpActive = (pumpLevel > 30.0f);
+    
+    // Hysteresis logic: Different thresholds for ON and OFF
+    if (lastPumpState) {
+        // Pump is currently ON → Turn OFF only if pumpLevel drops below 25%
+        output.pumpActive = (pumpLevel > PUMP_OFF_THRESHOLD);
+    } else {
+        // Pump is currently OFF → Turn ON only if pumpLevel exceeds 35%
+        output.pumpActive = (pumpLevel > PUMP_ON_THRESHOLD);
+    }
+    
+    // Update state memory
+    lastPumpState = output.pumpActive;
     
     return output;
 }
