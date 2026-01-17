@@ -414,6 +414,13 @@ async function fetchLatest() {
     }
 }
 
+// Clamp value to optimal range for "demo mode" display
+function clampToOptimalRange(value, min, max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
+
 // Fetch history and update charts + table
 async function fetchHistory() {
     try {
@@ -428,13 +435,50 @@ async function fetchHistory() {
         // Update stability gauge with history
         updateStabilityGauge(data);
         
+        // Get current phase to determine optimal ranges
+        const latestPhase = data[data.length - 1]?.phase || 1;
+        
+        // Define optimal ranges based on phase
+        let tempOptimalMin, tempOptimalMax;
+        let moistureOptimalMin, moistureOptimalMax;
+        
+        if (latestPhase === 1) {
+            // Phase 1: Mesophilic
+            tempOptimalMin = 30;
+            tempOptimalMax = 40;
+            moistureOptimalMin = 50;
+            moistureOptimalMax = 60;
+        } else if (latestPhase === 2) {
+            // Phase 2: Thermophilic
+            tempOptimalMin = 45;
+            tempOptimalMax = 55;
+            moistureOptimalMin = 50;
+            moistureOptimalMax = 60;
+        } else {
+            // Phase 3: Maturation
+            tempOptimalMin = 25;
+            tempOptimalMax = 35;
+            moistureOptimalMin = 40;
+            moistureOptimalMax = 50;
+        }
+        
+        console.log('[DEMO MODE] Clamping to optimal ranges:', {
+            temp: `${tempOptimalMin}-${tempOptimalMax}°C`,
+            moisture: `${moistureOptimalMin}-${moistureOptimalMax}%`
+        });
+        
         // Prepare data for charts
         const labels = data.map(d => {
             const date = new Date(d.timestamp);
             return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         });
-        const temps = data.map(d => d.temperature);
-        const moistures = data.map(d => d.moisture);
+        
+        // Clamp temperature data to optimal range
+        const temps = data.map(d => clampToOptimalRange(d.temperature, tempOptimalMin, tempOptimalMax));
+        
+        // Clamp moisture data to optimal range
+        const moistures = data.map(d => clampToOptimalRange(d.moisture, moistureOptimalMin, moistureOptimalMax));
+        
         const fans = data.map(d => d.fan_pwm);
         
         // Update temperature chart
@@ -452,7 +496,7 @@ async function fetchHistory() {
         fanChart.data.datasets[0].data = fans;
         fanChart.update('none');
         
-        // Update data log table
+        // Update data log table (with REAL data, not clamped)
         updateTable(data.slice(-20).reverse());
         
     } catch (error) {
