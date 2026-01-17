@@ -230,7 +230,7 @@
                     <div class="comparison-text">Chỉ bật quạt HOẶC bơm, không phối hợp</div>
                 </div>
                 
-                <button class="btn-demo">Chạy Case 1</button>
+                <button class="btn-demo" onclick="event.stopPropagation(); runCase(1);">Chạy Case 1</button>
             </div>
             
             <!-- Case 2: Optimal -->
@@ -270,7 +270,7 @@
                     <div class="comparison-text">Bật/tắt liên tục (oscillation)</div>
                 </div>
                 
-                <button class="btn-demo">Chạy Case 2</button>
+                <button class="btn-demo" onclick="event.stopPropagation(); runCase(2);">Chạy Case 2</button>
             </div>
             
             <!-- Case 3: Recovery -->
@@ -310,7 +310,7 @@
                     <div class="comparison-text">Có thể vẫn làm mát (sai lầm!)</div>
                 </div>
                 
-                <button class="btn-demo">Chạy Case 3</button>
+                <button class="btn-demo" onclick="event.stopPropagation(); runCase(3);">Chạy Case 3</button>
             </div>
         </div>
         
@@ -321,7 +321,7 @@
             <div class="status-detail" id="status-detail">
                 ESP32 sẽ điều khiển bơm/quạt thật theo case được chọn
             </div>
-            <a href="/" class="btn-dashboard" target="_blank">📊 Mở Dashboard</a>
+            <a href="/?v=3.0" class="btn-dashboard" target="_blank">📊 Mở Dashboard</a>
             <button class="btn-dashboard" onclick="clearDemo()" style="background: #ef4444; margin-left: 10px;">🛑 Tắt Demo Mode</button>
         </div>
     </div>
@@ -332,10 +332,13 @@
         let demoStartTime = null;
         const DEMO_DURATION = 30000; // 30 seconds
         
-        async function runCase(caseNum) {
+        function runCase(caseNum) {
+            console.log('Running case:', caseNum);
+            
             // Clear any existing demo
             if (demoInterval) {
                 clearInterval(demoInterval);
+                demoInterval = null;
             }
             
             // Remove active class from all cards
@@ -392,7 +395,7 @@
             document.getElementById('status-detail').textContent = `Hệ thống đang điều chỉnh từ từ về trạng thái lý tưởng (30 giây)`;
             
             // Start animation loop
-            demoInterval = setInterval(async () => {
+            demoInterval = setInterval(function() {
                 const elapsed = Date.now() - demoStartTime;
                 const progress = Math.min(elapsed / DEMO_DURATION, 1.0);
                 
@@ -406,29 +409,31 @@
                 const currentPump = progress < 0.5 ? data.start_pump : data.target_pump;
                 
                 // Send interpolated data to server
-                try {
-                    await fetch('/api/data', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            temperature: parseFloat(currentTemp.toFixed(1)),
-                            moisture: parseFloat(currentMoisture.toFixed(1)),
-                            temp_error: parseFloat((currentTemp - data.target_temp).toFixed(2)),
-                            fan_pwm: currentFan,
-                            pump: currentPump,
-                            phase: 1,
-                            target_temp: data.target_temp
-                        })
-                    });
+                fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        temperature: parseFloat(currentTemp.toFixed(1)),
+                        moisture: parseFloat(currentMoisture.toFixed(1)),
+                        temp_error: parseFloat((currentTemp - data.target_temp).toFixed(2)),
+                        fan_pwm: currentFan,
+                        pump: currentPump,
+                        phase: 1,
+                        target_temp: data.target_temp
+                    })
+                }).then(function(response) {
+                    if (!response.ok) {
+                        console.error('Server error:', response.status);
+                    }
                     
                     // Update status
                     const remainingSeconds = Math.ceil((DEMO_DURATION - elapsed) / 1000);
                     document.getElementById('status-detail').textContent = 
                         `🌡️ ${currentTemp.toFixed(1)}°C → ${data.target_temp}°C | 💧 ${currentMoisture.toFixed(1)}% → ${data.target_moisture}% | ⏱️ ${remainingSeconds}s`;
                     
-                } catch (error) {
+                }).catch(function(error) {
                     console.error('Error sending demo data:', error);
-                }
+                });
                 
                 // End demo after 30 seconds
                 if (progress >= 1.0) {
@@ -450,7 +455,9 @@
             }, 1000); // Update every 1 second
         }
         
-        async function clearDemo() {
+        function clearDemo() {
+            console.log('Clearing demo');
+            
             if (demoInterval) {
                 clearInterval(demoInterval);
                 demoInterval = null;
