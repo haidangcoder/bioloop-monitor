@@ -407,18 +407,18 @@ void initActuators() {
   pinMode(PIN_FAN_RELAY, OUTPUT);
   
   // SAFETY: Force both relays OFF at startup
-  // CẢ 2 KÊNH ĐỀU ACTIVE LOW
-  // Bơm (GPIO 27): ACTIVE LOW → HIGH = OFF
-  // Quạt (GPIO 26): ACTIVE LOW → HIGH = OFF
-  digitalWrite(PIN_PUMP_RELAY, HIGH);  // ACTIVE LOW: HIGH = OFF
-  digitalWrite(PIN_FAN_RELAY, HIGH);   // ACTIVE LOW: HIGH = OFF
+  // CẢ 2 KÊNH ĐỀU ACTIVE HIGH
+  // Bơm (GPIO 27): ACTIVE HIGH → LOW = OFF
+  // Quạt (GPIO 26): ACTIVE HIGH → LOW = OFF
+  digitalWrite(PIN_PUMP_RELAY, LOW);  // ACTIVE HIGH: LOW = OFF
+  digitalWrite(PIN_FAN_RELAY, LOW);   // ACTIVE HIGH: LOW = OFF
 
   delay(500);
   pumpActive = false;
   fanActive = false;
   
-  Serial.println("[ACTUATORS] Pump relay (GPIO 27) - OFF (ACTIVE LOW)");
-  Serial.println("[ACTUATORS] Fan relay (GPIO 26) - OFF (ACTIVE LOW)");
+  Serial.println("[ACTUATORS] Pump relay (GPIO 27) - OFF (ACTIVE HIGH)");
+  Serial.println("[ACTUATORS] Fan relay (GPIO 26) - OFF (ACTIVE HIGH)");
 }
 
 // ============================================
@@ -593,30 +593,30 @@ void runFuzzyControl() {
 // ============================================
 // ACTUATOR CONTROL FUNCTIONS
 // ============================================
-// CẢ 2 KÊNH ĐỀU ACTIVE LOW:
-//   Bơm (GPIO 27): ACTIVE LOW - LOW = ON, HIGH = OFF
-//   Quạt (GPIO 26): ACTIVE LOW - LOW = ON, HIGH = OFF
+// CẢ 2 KÊNH ĐỀU ACTIVE HIGH:
+//   Bơm (GPIO 27): ACTIVE HIGH - HIGH = ON, LOW = OFF
+//   Quạt (GPIO 26): ACTIVE HIGH - HIGH = ON, LOW = OFF
 // ============================================
 void setPump(bool state) {
   pumpActive = state;
-  // ACTIVE LOW: Đảo ngược logic
-  digitalWrite(PIN_PUMP_RELAY, state ? LOW : HIGH);
+  // ACTIVE HIGH: Logic bình thường
+  digitalWrite(PIN_PUMP_RELAY, state ? HIGH : LOW);
   
   // Debug: Verify GPIO state
   int gpioState = digitalRead(PIN_PUMP_RELAY);
-  Serial.printf("[DEBUG] Pump: state=%s → GPIO=%s (ACTIVE LOW)\n", 
+  Serial.printf("[DEBUG] Pump: state=%s → GPIO=%s (ACTIVE HIGH)\n", 
                 state ? "ON" : "OFF",
                 gpioState == LOW ? "LOW" : "HIGH");
 }
 
 void setFan(bool state) {
   fanActive = state;
-  // ACTIVE LOW: Đảo ngược logic
-  digitalWrite(PIN_FAN_RELAY, state ? LOW : HIGH);
+  // ACTIVE HIGH: Logic bình thường
+  digitalWrite(PIN_FAN_RELAY, state ? HIGH : LOW);
   
   // Debug: Verify GPIO state
   int gpioState = digitalRead(PIN_FAN_RELAY);
-  Serial.printf("[DEBUG] Fan: state=%s → GPIO=%s (ACTIVE LOW)\n", 
+  Serial.printf("[DEBUG] Fan: state=%s → GPIO=%s (ACTIVE HIGH)\n", 
                 state ? "ON" : "OFF",
                 gpioState == LOW ? "LOW" : "HIGH");
 }
